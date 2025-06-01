@@ -2,21 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Send } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Send, MoreVertical, Trash2, Edit, Image, X, LogOut } from "lucide-react";
 import { MessageBubble } from "@/components/message-bubble";
 import { useAppData } from "@/hooks/use-storage";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
+import type { AvatarColor } from "@/types";
 
 export default function ChatPage() {
   const [, setLocation] = useLocation();
   const { contactId } = useParams<{ contactId: string }>();
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [newContactName, setNewContactName] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const { data, addMessage, getContactMessages } = useAppData();
+  const { data, addMessage, getContactMessages, updateData } = useAppData();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,6 +95,105 @@ export default function ChatPage() {
     }
   };
 
+  const avatarColors: AvatarColor[] = [
+    "from-pink-500 to-rose-600",
+    "from-blue-500 to-indigo-600", 
+    "from-purple-500 to-violet-600",
+    "from-green-500 to-emerald-600",
+    "from-orange-500 to-amber-600",
+    "from-red-500 to-pink-600",
+    "from-cyan-500 to-blue-600",
+    "from-violet-500 to-purple-600"
+  ];
+
+  const handleDeleteAllMessages = () => {
+    if (!contactId || !data) return;
+    
+    updateData(prevData => ({
+      ...prevData,
+      conversations: prevData.conversations.map(conv => 
+        conv.contactId === contactId 
+          ? { ...conv, messageIds: [], lastMessage: "", lastMessageAt: undefined }
+          : conv
+      ),
+      messages: prevData.messages.filter(msg => msg.contactId !== contactId)
+    }));
+
+    toast({
+      title: "Success",
+      description: "All messages deleted successfully.",
+    });
+  };
+
+  const handleRenameContact = () => {
+    const currentContact = data?.contacts.find(c => c.id === contactId);
+    if (currentContact) {
+      setNewContactName(currentContact.name);
+      setRenameDialogOpen(true);
+    }
+  };
+
+  const handleSaveRename = () => {
+    if (!newContactName.trim() || !contactId || !data) return;
+
+    updateData(prevData => ({
+      ...prevData,
+      contacts: prevData.contacts.map(contact =>
+        contact.id === contactId 
+          ? { ...contact, name: newContactName.trim() }
+          : contact
+      )
+    }));
+
+    setRenameDialogOpen(false);
+    setNewContactName("");
+    
+    toast({
+      title: "Success",
+      description: "Contact renamed successfully.",
+    });
+  };
+
+  const handleChangeAvatar = (newColor: AvatarColor) => {
+    if (!contactId || !data) return;
+
+    updateData(prevData => ({
+      ...prevData,
+      contacts: prevData.contacts.map(contact =>
+        contact.id === contactId 
+          ? { ...contact, color: newColor }
+          : contact
+      )
+    }));
+
+    toast({
+      title: "Success",
+      description: "Avatar color changed successfully.",
+    });
+  };
+
+  const handleDeleteConversation = () => {
+    if (!contactId || !data) return;
+
+    updateData(prevData => ({
+      ...prevData,
+      contacts: prevData.contacts.filter(contact => contact.id !== contactId),
+      conversations: prevData.conversations.filter(conv => conv.contactId !== contactId),
+      messages: prevData.messages.filter(msg => msg.contactId !== contactId)
+    }));
+
+    toast({
+      title: "Success",
+      description: "Conversation deleted successfully.",
+    });
+
+    setLocation("/home");
+  };
+
+  const handleClosure = () => {
+    setLocation("/home");
+  };
+
   // Show loading state while data is being loaded
   if (!data) {
     return (
@@ -121,7 +226,7 @@ export default function ChatPage() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-1">
           <div className={`w-10 h-10 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white font-medium`}>
             {displayContact.avatar}
           </div>
@@ -130,6 +235,69 @@ export default function ChatPage() {
             <p className="text-xs text-gray-400">Therapeutic conversation</p>
           </div>
         </div>
+        
+        {/* Chat Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8 text-gray-400 hover:text-[#F5F5F5] hover:bg-[#383838]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-[#2D2D2D] border-gray-600" align="end">
+            <DropdownMenuItem 
+              onClick={handleDeleteAllMessages}
+              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete all messages
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleRenameContact}
+              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => {}}
+              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
+            >
+              <Image className="w-4 h-4 mr-2" />
+              Change Image
+              <div className="ml-auto flex space-x-1">
+                {avatarColors.slice(0, 4).map((color) => (
+                  <div
+                    key={color}
+                    className={`w-3 h-3 bg-gradient-to-br ${color} rounded-full cursor-pointer`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleChangeAvatar(color);
+                    }}
+                  />
+                ))}
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleDeleteConversation}
+              className="text-red-400 hover:bg-[#383838] cursor-pointer"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Delete Current Photo
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleClosure}
+              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Closure
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Messages Container */}
@@ -178,6 +346,44 @@ export default function ChatPage() {
           </Button>
         </div>
       </div>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="bg-[#2D2D2D] border-gray-600">
+          <DialogHeader>
+            <DialogTitle className="text-[#F5F5F5]">Rename Contact</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-gray-300 mb-2 block">Contact Name</label>
+              <Input
+                value={newContactName}
+                onChange={(e) => setNewContactName(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSaveRename()}
+                placeholder="Enter new name..."
+                className="bg-[#1E1E1E] border-gray-600 text-[#F5F5F5]"
+                autoFocus
+              />
+            </div>
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => setRenameDialogOpen(false)}
+                variant="outline"
+                className="flex-1 bg-transparent border-gray-600 text-gray-300 hover:bg-[#383838]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveRename}
+                className="flex-1 bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E]"
+                disabled={!newContactName.trim()}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
