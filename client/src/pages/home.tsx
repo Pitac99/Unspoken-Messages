@@ -227,26 +227,28 @@ export default function HomePage() {
                       conv.contact?.avatar
                     )}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-[#F5F5F5]">
+                  <div className="flex-1 pr-2">
+                    <h3 className="font-medium text-[#F5F5F5] truncate">
                       {conv.contact?.name}
                     </h3>
-                    <p className="text-gray-400 text-sm truncate">
-                      {conv.isClosed 
-                        ? "Closure" 
-                        : conv.lastMessage 
-                          ? (conv.lastMessage.length > 15 
-                              ? `${conv.lastMessage.substring(0, 15)}...` 
-                              : conv.lastMessage)
-                          : "Start your conversation..."
-                      }
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-400 text-sm truncate flex-1">
+                        {conv.isClosed 
+                          ? "Closure" 
+                          : conv.lastMessage 
+                            ? (conv.lastMessage.length > 15 
+                                ? `${conv.lastMessage.substring(0, 15)}...` 
+                                : conv.lastMessage)
+                            : "Start your conversation..."
+                        }
+                      </p>
+                      <p className="text-xs text-gray-500 ml-2 flex-shrink-0">{timeText}</p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">{timeText}</p>
+                    <div className="flex items-center">
                       {conv.unreadCount > 0 && (
-                        <div className="w-2 h-2 bg-[#D49A6A] rounded-full mt-1 ml-auto"></div>
+                        <div className="w-2 h-2 bg-[#D49A6A] rounded-full"></div>
                       )}
                     </div>
                     <DropdownMenu>
