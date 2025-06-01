@@ -216,13 +216,19 @@ export function useAppData() {
     
     const totalMessages = data.settings.totalMessagesSent || 0;
     
+    // Auto-migrate: add missing donationIntervalsShown field
+    if (!data.settings.donationIntervalsShown) {
+      updateData(prevData => ({
+        ...prevData,
+        settings: {
+          ...prevData.settings,
+          donationIntervalsShown: []
+        }
+      }));
+    }
+    
     // Ensure we have the new array structure
     let shownIntervals = data.settings.donationIntervalsShown || [];
-    
-    // If this is a fresh install or reset data, make sure we track properly
-    if (!data.settings.donationIntervalsShown) {
-      shownIntervals = [];
-    }
     
     // Donation intervals: exactly at messages 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
@@ -235,7 +241,7 @@ export function useAppData() {
     }
     
     return { show: false, interval: 0, totalMessages };
-  }, [data]);
+  }, [data, updateData]);
 
   const markDonationPromptShown = useCallback(() => {
     if (!data) return;
