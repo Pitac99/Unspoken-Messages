@@ -262,7 +262,10 @@ export default function HomePage() {
                           Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => handleUploadImage(conv.contactId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUploadImage(conv.contactId);
+                          }}
                           className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
                         >
                           <ImageIcon className="w-4 h-4 mr-2" />
