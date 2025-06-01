@@ -441,8 +441,22 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      {!isClosed && (
+      {/* Message Input or Unlock Button */}
+      {isClosed ? (
+        <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
+          <div className="text-center">
+            <Button
+              onClick={handleUnlock}
+              className="bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] px-8 py-3 rounded-full font-medium"
+            >
+              Continue Conversation
+            </Button>
+            <p className="text-gray-400 text-xs mt-2">
+              Unlock to add new messages to this conversation
+            </p>
+          </div>
+        </div>
+      ) : (
         <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
           <div className="flex items-end space-x-3">
             <div className="flex-1">
