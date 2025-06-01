@@ -1,0 +1,178 @@
+UNSPOKEN - Aplicație Terapeutică pentru Mesaje Nesunate
+Descriere Generală
+UNSPOKEN este o aplicație terapeutică inovatoare concepută pentru a oferi un spațiu sigur și privat pentru exprimarea gândurilor și emoțiilor prin mesaje nesunate. Aplicația combine terapia prin scriere cu securitatea avansată și un design elegant în nuanțe de gri antracit.
+
+Arhitectură și Tehnologii
+Frontend: React + TypeScript cu Vite
+Styling: Tailwind CSS cu theme personalizat
+Autentificare: PIN de 4 cifre cu opțiune biometrică
+Storage: Criptare locală pentru securitate maximă
+Design: Dark theme cu paleta gri antracit (#1E1E1E fundal, #2D2D2D carduri)
+Pagini și Funcționalități Detaliate
+1. Pagina Intro (Introducere)
+Funcționalități:
+
+Afișează logo-ul "UNSPOKEN" și mesajul "A therapeutic space for your thoughts"
+Buton pentru acceptarea termenilor și condițiilor
+Link către pagina de termeni
+Design minimalist cu focus pe mesajul principal
+Flow de navigare:
+
+Intro → Onboarding (după acceptarea termenilor)
+2. Pagina Onboarding
+Funcționalități:
+
+Prezentare pas cu pas a funcționalităților aplicației
+Explicarea conceptului de mesaje terapeutice
+Introducerea beneficiilor scrierii pentru sănătatea mentală
+Buton de continuare către configurarea PIN-ului
+Flow de navigare:
+
+Onboarding → PIN Setup
+3. Pagina PIN Setup (Configurare PIN)
+Funcționalități:
+
+Configurarea unui PIN de 4 cifre pentru securitate
+Confirmare PIN prin introducerea de două ori
+Opțiune de autentificare biometrică (fingerprint/Face ID)
+Validare în timp real a PIN-ului introdus
+Tastatură numerică personalizată cu design modern
+Securitate:
+
+Hash-uirea PIN-ului înainte de stocare
+Criptarea datelor locale
+Flow de navigare:
+
+PIN Setup → Home (după configurarea cu succes)
+4. Pagina PIN Auth (Autentificare PIN)
+Funcționalități:
+
+Introducerea PIN-ului pentru accesarea aplicației
+Opțiune de autentificare biometrică rapidă
+Buton de ștergere și tastatură numerică
+Validare și feedback în caz de PIN incorect
+Loading state și animații smooth
+Securitate:
+
+Verificarea hash-ului PIN-ului
+Protecție împotriva încercărilor multiple
+Flow de navigare:
+
+PIN Auth → Home (după autentificare cu succes)
+5. Pagina Home (Principală)
+Funcționalități:
+
+Vizualizarea conversațiilor existente cu preview-ul ultimului mesaj
+Buton "+" pentru crearea unei noi conversații
+Lista contacte cu opțiuni de:
+Editare nume contact
+Ștergere contact
+Vizualizare statistici (numărul de mesaje)
+Meniu contextual pentru fiecare conversație
+Navigare către Settings
+Design responsive cu carduri pentru fiecare conversație
+Flow de navigare:
+
+Home → Contact Selection (pentru conversație nouă)
+Home → Chat (pentru conversație existentă)
+Home → Settings
+6. Pagina Contact Selection (Selectare Contact)
+Funcționalități:
+
+Adăugare contact nou cu nume personalizat
+Selectarea unui contact existent din listă
+Preview contacte cu avatar-uri colorate generat automat
+Validare input pentru numele contactului
+Buton de anulare pentru întoarcerea la Home
+Flow de navigare:
+
+Contact Selection → Chat (după selectarea contactului)
+Contact Selection → Home (anulare)
+7. Pagina Chat (Conversație)
+Funcționalități:
+
+Scriere mesaje în zona de text expandabilă
+Trimitere mesaje cu Enter sau butonul Send
+Afișarea istoricului de mesaje cu timestamp-uri
+Design bubble pentru mesaje cu animații
+Header cu numele contactului și buton înapoi
+Scroll automat la ultimul mesaj
+Suport pentru mesaje lungi cu wrap text automat
+Caracteristici tehnice:
+
+Auto-resize pentru zona de text
+Salvare automată în storage local criptat
+Formatare dată și oră pentru fiecare mesaj
+Flow de navigare:
+
+Chat → Home (buton înapoi)
+8. Pagina Settings (Setări)
+Funcționalități principale:
+
+Secțiunea Security (Securitate)
+Activare/dezactivare autentificare biometrică
+Schimbarea PIN-ului cu dialog dedicat:
+Introducerea PIN-ului curent
+Setarea PIN-ului nou
+Confirmarea PIN-ului nou
+Validare și feedback
+Secțiunea Privacy (Confidențialitate)
+Auto-delete mesaje după 30 de zile (toggle)
+Export date - descărcarea tuturor conversațiilor în format JSON criptat
+Reset Onboarding - revenirea la procesul inițial de configurare
+Secțiunea Support (Suport)
+Support Development - link pentru donații/suport
+Terms & Conditions - navigare către pagina de termeni
+About UNSPOKEN - informații despre versiune
+Funcționalități avansate:
+
+Dialog-uri modale pentru acțiuni importante
+Validare în timp real pentru schimbarea PIN-ului
+Export securizat al datelor
+Feedback vizual pentru toate acțiunile
+Flow de navigare:
+
+Settings → Home (buton înapoi)
+Settings → Terms (din secțiunea Support)
+9. Pagina Terms (Termeni și Condiții)
+Funcționalități:
+
+Afișarea completă a termenilor de utilizare
+Politica de confidențialitate
+Informații legale despre aplicație
+Buton înapoi către Settings sau Intro
+Caracteristici de Securitate
+Criptare și Storage
+Criptare AES pentru toate datele locale
+Hash-uirea PIN-urilor cu algoritmi securizați
+Storage segmentat pentru diferite tipuri de date
+Ștergere sigură a datelor la cerere
+Autentificare
+PIN obligatoriu de 4 cifre
+Autentificare biometrică opțională
+Session management automat
+Protecție împotriva accesului neautorizat
+Design și UX
+Paleta de Culori
+Fundal principal: #1E1E1E (gri antracit închis)
+Carduri: #2D2D2D (gri mediu)
+Text principal: #F5F5F5 (alb cald)
+Accenturi: culori nude/caramel pentru butoane (#D49A6A)
+Experiența Utilizatorului
+Flow intuitiv din intro către utilizare
+Animații smooth pentru tranziții
+Feedback vizual pentru toate acțiunile
+Design responsiv pentru toate ecranele
+Tastaturi personalizate pentru introducerea PIN-ului
+Beneficii Terapeutice
+Conceptul "Mesaje Nesunate"
+Spațiu sigur pentru exprimarea emoțiilor
+Fără presiunea răspunsului - mesajele rămân private
+Procesare emoțională prin scriere terapeutică
+Organizare gânduri în conversații structurate
+Funcționalități de Wellness
+Auto-delete pentru detașare emoțională
+Contacte simbolice pentru adresarea mesajelor
+Istoric personal pentru urmărirea progresului
+Privacy completă fără conectare la internet
+UNSPOKEN oferă o experiență unică de terapie digitală, combinând securitatea avansată cu un design elegant și funcționalități intuitive pentru sănătatea mentală.
