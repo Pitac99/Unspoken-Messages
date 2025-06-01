@@ -6,6 +6,7 @@ export const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
   avatar: z.string(),
   color: z.string(),
+  imageUrl: z.string().optional(),
   createdAt: z.date(),
   lastMessageAt: z.date().optional(),
 });

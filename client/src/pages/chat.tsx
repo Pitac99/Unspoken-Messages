@@ -179,7 +179,7 @@ export default function ChatPage() {
       ...prevData,
       contacts: prevData.contacts.map(contact =>
         contact.id === contactId 
-          ? { ...contact, avatar: "?", color: "from-blue-500 to-indigo-600" }
+          ? { ...contact, imageUrl: undefined }
           : contact
       )
     }));
@@ -203,25 +203,20 @@ export default function ChatPage() {
         reader.onload = (event) => {
           const imageDataUrl = event.target?.result as string;
           
-          // For now, we'll use the first letter of the filename as avatar
-          // In a real app, you'd upload this to a server and store the URL
-          const filename = file.name;
-          const avatarLetter = filename.charAt(0).toUpperCase();
-          
           if (!contactId || !data) return;
           
           updateData(prevData => ({
             ...prevData,
             contacts: prevData.contacts.map(contact =>
               contact.id === contactId 
-                ? { ...contact, avatar: avatarLetter, color: "from-purple-500 to-violet-600" }
+                ? { ...contact, imageUrl: imageDataUrl }
                 : contact
             )
           }));
 
           toast({
             title: "Success",
-            description: "Avatar updated successfully.",
+            description: "Avatar image updated successfully.",
           });
         };
         reader.readAsDataURL(file);
@@ -285,8 +280,16 @@ export default function ChatPage() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex items-center space-x-3 flex-1">
-          <div className={`w-10 h-10 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white font-medium`}>
-            {displayContact.avatar}
+          <div className={`w-10 h-10 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white font-medium overflow-hidden`}>
+            {contact?.imageUrl ? (
+              <img 
+                src={contact.imageUrl} 
+                alt={displayContact.name}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              displayContact.avatar
+            )}
           </div>
           <div>
             <h1 className="text-lg font-semibold text-[#F5F5F5]">{displayContact.name}</h1>
@@ -350,8 +353,16 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center py-12">
-            <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white text-2xl font-semibold`}>
-              {displayContact.avatar}
+            <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white text-2xl font-semibold overflow-hidden`}>
+              {contact?.imageUrl ? (
+                <img 
+                  src={contact.imageUrl} 
+                  alt={displayContact.name}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                displayContact.avatar
+              )}
             </div>
             <h3 className="text-lg font-medium text-[#F5F5F5] mb-2">
               Start your conversation with {displayContact.name}

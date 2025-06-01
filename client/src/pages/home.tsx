@@ -182,9 +182,17 @@ export default function HomePage() {
               >
                 <div className="flex items-center space-x-4">
                   <div 
-                    className={`w-12 h-12 bg-gradient-to-br ${conv.contact?.color} rounded-full flex items-center justify-center text-white font-semibold`}
+                    className={`w-12 h-12 bg-gradient-to-br ${conv.contact?.color} rounded-full flex items-center justify-center text-white font-semibold overflow-hidden`}
                   >
-                    {conv.contact?.avatar}
+                    {conv.contact?.imageUrl ? (
+                      <img 
+                        src={conv.contact.imageUrl} 
+                        alt={conv.contact.name}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      conv.contact?.avatar
+                    )}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium text-[#F5F5F5]">
