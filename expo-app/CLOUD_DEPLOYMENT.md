@@ -19,14 +19,17 @@ cd expo-app
 npm install
 ```
 
-### 🚀 Pasul 3: Login și publicare
+### 🚀 Pasul 3: Login și configurare EAS
 ```bash
 # Login în contul Expo
 npx expo login
 # Email: cristi.david87@gmail.com
 
-# Publicare în cloud
-npx expo publish --release-channel production
+# Configurare EAS pentru updates
+npx eas update:configure
+
+# Publicare în cloud cu EAS Update
+npx eas update --branch production --message "UNSPOKEN App Release"
 ```
 
 ### 🌐 Pasul 4: Acces cloud permanent
@@ -57,7 +60,16 @@ După publicare, aplicația va fi disponibilă la:
 ```bash
 cd expo-app
 # Fă modificările necesare în cod
-npx expo publish --release-channel production
+npx eas update --branch production --message "Update descriere"
+```
+
+### 🏗️ Pentru build complet (prima dată):
+```bash
+# Configurare EAS build
+npx eas build:configure
+
+# Build pentru development testing
+npx eas build --platform all --profile development
 ```
 
 Aplicația se va actualiza automat în Expo Go la următoarea deschidere.
