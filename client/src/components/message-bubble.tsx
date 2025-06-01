@@ -77,16 +77,14 @@ export function MessageBubble({ message, className, onEdit, isEditMode = true }:
             onClick={handleClick}
           >
             <p className="text-sm leading-relaxed">{message.content}</p>
+            <p className="text-xs text-[#8B5A2B] mt-2 italic">
+              (This message was released. It was not sent.)
+            </p>
             {/* Message tail */}
             <div className="absolute bottom-0 right-[-8px] w-0 h-0 border-l-8 border-l-[#D49A6A] border-b-8 border-b-transparent"></div>
           </div>
         )}
-        <div className="text-right">
-          <p className="text-xs text-gray-500 mt-1">{timeStr}</p>
-          <p className="text-xs text-gray-400 mt-1 italic">
-            (This message was released. It was not sent.)
-          </p>
-        </div>
+        <p className="text-xs text-gray-500 mt-1 text-right">{timeStr}</p>
       </div>
     </div>
   );
