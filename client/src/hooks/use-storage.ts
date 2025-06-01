@@ -198,8 +198,8 @@ export function useAppData() {
       })
       .filter(Boolean)
       .sort((a, b) => {
-        const aTime = a!.lastMessageAt?.getTime() || 0;
-        const bTime = b!.lastMessageAt?.getTime() || 0;
+        const aTime = a!.lastMessageAt ? new Date(a!.lastMessageAt).getTime() : 0;
+        const bTime = b!.lastMessageAt ? new Date(b!.lastMessageAt).getTime() : 0;
         return bTime - aTime;
       });
   }, [data]);
