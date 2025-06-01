@@ -8,21 +8,37 @@ cd expo-app
 npm install
 ```
 
-### 2. Login în contul Expo
+### 2. Configurare EAS (Expo Application Services)
+```bash
+npm install -g @expo/cli
+npm install -g eas-cli
+```
+
+### 3. Login în contul Expo
 ```bash
 npx expo login
 # Folosește: cristi.david87@gmail.com
 ```
 
-### 3. Publicare aplicație
+### 4. Configurare EAS
 ```bash
-npx expo publish
+eas build:configure
 ```
 
-### 4. Testare în Expo Go
+### 5. Start development server pentru testare
+```bash
+npx expo start --tunnel
+```
+
+### 6. Testare în Expo Go
 - Descarcă aplicația Expo Go pe telefon
-- Scanează QR code-ul generat
-- Aplicația va rula pe telefon
+- Scanează QR code-ul generat din terminal
+- Aplicația va rula pe telefon în timp real
+
+### Alternativă: Publicare cu EAS Update
+```bash
+eas update --branch main
+```
 
 ## Structura aplicației
 
