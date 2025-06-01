@@ -85,6 +85,7 @@ export function useAppData() {
         contactId: newContact.id,
         messageCount: 0,
         unreadCount: 0,
+        isClosed: false,
       };
 
       return {

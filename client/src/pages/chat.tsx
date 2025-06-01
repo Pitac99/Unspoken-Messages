@@ -19,7 +19,6 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
-  const [isClosed, setIsClosed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -37,7 +36,9 @@ export default function ChatPage() {
   }, [setLocation]);
 
   const contact = data?.contacts.find(c => c.id === contactId);
+  const conversation = data?.conversations.find(c => c.contactId === contactId);
   const messages = getContactMessages(contactId || "");
+  const isClosed = conversation?.isClosed || false;
 
   useEffect(() => {
     // Only redirect if no contactId is provided
@@ -245,10 +246,38 @@ export default function ChatPage() {
   };
 
   const handleClosure = () => {
-    setIsClosed(true);
+    if (!contactId || !data) return;
+
+    updateData(prevData => ({
+      ...prevData,
+      conversations: prevData.conversations.map(conv =>
+        conv.contactId === contactId 
+          ? { ...conv, isClosed: true }
+          : conv
+      )
+    }));
+
     toast({
       title: "Conversation Closed",
       description: "Your therapeutic journey for this conversation has been completed.",
+    });
+  };
+
+  const handleUnlock = () => {
+    if (!contactId || !data) return;
+
+    updateData(prevData => ({
+      ...prevData,
+      conversations: prevData.conversations.map(conv =>
+        conv.contactId === contactId 
+          ? { ...conv, isClosed: false }
+          : conv
+      )
+    }));
+
+    toast({
+      title: "Conversation Unlocked",
+      description: "You can now continue your therapeutic conversation.",
     });
   };
 
@@ -344,11 +373,11 @@ export default function ChatPage() {
               Delete Current Photo
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={handleClosure}
+              onClick={isClosed ? handleUnlock : handleClosure}
               className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Closure
+              {isClosed ? "Unlock" : "Closure"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -357,25 +386,32 @@ export default function ChatPage() {
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {isClosed ? (
-          <div className="text-center py-12">
-            <div className={`w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-3xl font-semibold`}>
-              ✓
+          <div className="space-y-4">
+            {/* Closure Message */}
+            <div className="text-center py-8 bg-[#2D2D2D] rounded-2xl">
+              <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold`}>
+                ✓
+              </div>
+              <h3 className="text-lg font-medium text-[#F5F5F5] mb-2">
+                Conversation Completed
+              </h3>
+              <p className="text-gray-300 text-sm mb-1">
+                We're glad Unspoken has helped you express yourself.
+              </p>
+              <p className="text-gray-400 text-xs">
+                This therapeutic conversation has reached its closure.
+              </p>
             </div>
-            <h3 className="text-xl font-medium text-[#F5F5F5] mb-4">
-              Conversation Completed
-            </h3>
-            <p className="text-gray-300 text-base mb-2">
-              We're glad Unspoken has helped you express yourself.
-            </p>
-            <p className="text-gray-400 text-sm mb-6">
-              This therapeutic conversation has reached its closure. Your thoughts and feelings have been safely shared in this private space.
-            </p>
-            <Button
-              onClick={() => setLocation("/home")}
-              className="bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] px-6 py-2"
-            >
-              Return Home
-            </Button>
+            
+            {/* Show Message History */}
+            {messages.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-300 px-2">Conversation History</h4>
+                {messages.map((msg) => (
+                  <MessageBubble key={msg.id} message={msg} />
+                ))}
+              </div>
+            )}
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-12">

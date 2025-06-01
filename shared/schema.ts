@@ -44,6 +44,7 @@ export const conversationSchema = z.object({
   lastMessageAt: z.date().optional(),
   messageCount: z.number().default(0),
   unreadCount: z.number().default(0),
+  isClosed: z.boolean().default(false),
 });
 
 export type Conversation = z.infer<typeof conversationSchema>;
