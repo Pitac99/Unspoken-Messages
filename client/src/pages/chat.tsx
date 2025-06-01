@@ -393,17 +393,17 @@ export default function ChatPage() {
             ))}
             
             {/* Closure Message at the End */}
-            <div className="text-center py-8 bg-[#2D2D2D] rounded-2xl mt-6">
+            <div className="text-center py-8 bg-[#2D2D2D] rounded-2xl mt-6 mx-4">
               <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold`}>
                 ✓
               </div>
-              <h3 className="text-lg font-medium text-[#F5F5F5] mb-2">
-                Conversation Completed
+              <h3 className="text-lg font-medium text-[#F5F5F5] mb-3">
+                We are glad you found closure
               </h3>
-              <p className="text-gray-300 text-sm mb-1">
+              <p className="text-gray-300 text-sm mb-2 px-6">
                 We're glad Unspoken has helped you express yourself.
               </p>
-              <p className="text-gray-400 text-xs">
+              <p className="text-gray-400 text-xs px-6">
                 This therapeutic conversation has reached its closure.
               </p>
             </div>
