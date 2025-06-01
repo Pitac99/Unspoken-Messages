@@ -19,6 +19,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
+  const [isClosed, setIsClosed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -244,7 +245,11 @@ export default function ChatPage() {
   };
 
   const handleClosure = () => {
-    setLocation("/home");
+    setIsClosed(true);
+    toast({
+      title: "Conversation Closed",
+      description: "Your therapeutic journey for this conversation has been completed.",
+    });
   };
 
   // Show loading state while data is being loaded
@@ -351,7 +356,28 @@ export default function ChatPage() {
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.length === 0 ? (
+        {isClosed ? (
+          <div className="text-center py-12">
+            <div className={`w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-3xl font-semibold`}>
+              ✓
+            </div>
+            <h3 className="text-xl font-medium text-[#F5F5F5] mb-4">
+              Conversation Completed
+            </h3>
+            <p className="text-gray-300 text-base mb-2">
+              We're glad Unspoken has helped you express yourself.
+            </p>
+            <p className="text-gray-400 text-sm mb-6">
+              This therapeutic conversation has reached its closure. Your thoughts and feelings have been safely shared in this private space.
+            </p>
+            <Button
+              onClick={() => setLocation("/home")}
+              className="bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] px-6 py-2"
+            >
+              Return Home
+            </Button>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="text-center py-12">
             <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white text-2xl font-semibold overflow-hidden`}>
               {contact?.imageUrl ? (
@@ -380,29 +406,31 @@ export default function ChatPage() {
       </div>
 
       {/* Message Input */}
-      <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
-        <div className="flex items-end space-x-3">
-          <div className="flex-1">
-            <Textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Write your thoughts..."
-              className="w-full bg-[#2D2D2D] border border-gray-600 rounded-2xl px-4 py-3 text-[#F5F5F5] placeholder-gray-400 focus:border-[#D49A6A] focus:outline-none transition-colors resize-none min-h-[44px] max-h-32 overflow-hidden"
-              rows={1}
-              disabled={isLoading}
-            />
+      {!isClosed && (
+        <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
+          <div className="flex items-end space-x-3">
+            <div className="flex-1">
+              <Textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Write your thoughts..."
+                className="w-full bg-[#2D2D2D] border border-gray-600 rounded-2xl px-4 py-3 text-[#F5F5F5] placeholder-gray-400 focus:border-[#D49A6A] focus:outline-none transition-colors resize-none min-h-[44px] max-h-32 overflow-hidden"
+                rows={1}
+                disabled={isLoading}
+              />
+            </div>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isLoading}
+              className="w-12 h-12 bg-[#D49A6A] hover:bg-amber-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-5 h-5 text-[#1E1E1E]" />
+            </Button>
           </div>
-          <Button
-            onClick={handleSendMessage}
-            disabled={!message.trim() || isLoading}
-            className="w-12 h-12 bg-[#D49A6A] hover:bg-amber-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Send className="w-5 h-5 text-[#1E1E1E]" />
-          </Button>
         </div>
-      </div>
+      )}
 
       {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
