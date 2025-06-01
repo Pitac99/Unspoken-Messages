@@ -33,11 +33,12 @@ export default function ChatPage() {
   const messages = getContactMessages(contactId || "");
 
   useEffect(() => {
-    if (!contactId || !contact) {
+    // Only check for contact after data is loaded
+    if (data && (!contactId || !contact)) {
       setLocation("/home");
       return;
     }
-  }, [contactId, contact, setLocation]);
+  }, [contactId, contact, setLocation, data]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -87,6 +88,17 @@ export default function ChatPage() {
       handleSendMessage();
     }
   };
+
+  // Show loading state while data is being loaded
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!contact) {
     return (
