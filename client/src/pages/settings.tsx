@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  const [aboutModalOpen, setAboutModalOpen] = useState(false);
 
   const handleBack = () => {
     setLocation("/home");
@@ -281,7 +282,10 @@ export default function SettingsPage() {
                 <ChevronRight className="text-gray-400" size={16} />
               </div>
             </button>
-            <button className="w-full text-left p-3 rounded-xl hover:bg-[#383838] transition-colors">
+            <button 
+              onClick={() => setAboutModalOpen(true)}
+              className="w-full text-left p-3 rounded-xl hover:bg-[#383838] transition-colors"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-[#F5F5F5]">About UNSPOKEN</span>
                 <Info className="text-gray-400" size={16} />
@@ -314,6 +318,41 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* About UNSPOKEN Modal */}
+      <Dialog open={aboutModalOpen} onOpenChange={setAboutModalOpen}>
+        <DialogContent className="bg-[#2D2D2D] border-[#383838] text-[#F5F5F5] max-w-md mx-4">
+          <DialogHeader>
+            <DialogTitle className="text-[#D49A6A] text-lg">Why I Created Unspoken</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm leading-relaxed text-gray-300 max-h-80 overflow-y-auto">
+            <p>There are words we carry inside us—words we never say.</p>
+            <p>Sometimes because the person we want to say them to is no longer here. Sometimes because the relationship is broken, or the conversation was never safe to begin with.</p>
+            <p>And sometimes… because what we need to express is raw, painful, or simply too heavy to speak out loud.</p>
+            
+            <p className="text-[#D49A6A] font-medium">Unspoken was born from my own need to release what I couldn't say.</p>
+            <p>The guilt, the anger, the love left unsaid, the apologies never sent. I built this app for people like me—for anyone holding onto unspoken thoughts, waiting for an outlet that feels private, safe, and judgment-free.</p>
+            
+            <p className="text-[#D49A6A] font-medium">This isn't a messenger. It's a space for release.</p>
+            <p>Whether you're writing to someone who's gone, someone who hurt you, or someone you love but can't talk to—Unspoken is where you say what needs to be said, without the pressure to send it.</p>
+            
+            <p>I hope this helps you find peace in the silence, just like it helped me.</p>
+            <p className="text-[#D49A6A] font-medium">Let your thoughts breathe. Say what you couldn't say.</p>
+            <p className="text-[#D49A6A] font-medium">Say the Unspoken.</p>
+            
+            <div className="pt-4 border-t border-gray-600">
+              <Button
+                onClick={() => {
+                  window.open('https://buymeacoffee.com/unspokendonations', '_blank');
+                }}
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-medium"
+              >
+                Support Unspoken
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
