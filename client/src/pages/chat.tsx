@@ -172,6 +172,64 @@ export default function ChatPage() {
     });
   };
 
+  const handleDeleteCurrentPhoto = () => {
+    if (!contactId || !data) return;
+
+    updateData(prevData => ({
+      ...prevData,
+      contacts: prevData.contacts.map(contact =>
+        contact.id === contactId 
+          ? { ...contact, avatar: "?", color: "from-blue-500 to-indigo-600" }
+          : contact
+      )
+    }));
+
+    toast({
+      title: "Success",
+      description: "Avatar photo deleted successfully.",
+    });
+  };
+
+  const handleUploadImage = () => {
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // Create a FileReader to read the image
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageDataUrl = event.target?.result as string;
+          
+          // For now, we'll use the first letter of the filename as avatar
+          // In a real app, you'd upload this to a server and store the URL
+          const filename = file.name;
+          const avatarLetter = filename.charAt(0).toUpperCase();
+          
+          if (!contactId || !data) return;
+          
+          updateData(prevData => ({
+            ...prevData,
+            contacts: prevData.contacts.map(contact =>
+              contact.id === contactId 
+                ? { ...contact, avatar: avatarLetter, color: "from-purple-500 to-violet-600" }
+                : contact
+            )
+          }));
+
+          toast({
+            title: "Success",
+            description: "Avatar updated successfully.",
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
   const handleDeleteConversation = () => {
     if (!contactId || !data) return;
 
@@ -264,26 +322,14 @@ export default function ChatPage() {
               Rename
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => {}}
+              onClick={handleUploadImage}
               className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
             >
               <Image className="w-4 h-4 mr-2" />
               Change Image
-              <div className="ml-auto flex space-x-1">
-                {avatarColors.slice(0, 4).map((color) => (
-                  <div
-                    key={color}
-                    className={`w-3 h-3 bg-gradient-to-br ${color} rounded-full cursor-pointer`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleChangeAvatar(color);
-                    }}
-                  />
-                ))}
-              </div>
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={handleDeleteConversation}
+              onClick={handleDeleteCurrentPhoto}
               className="text-red-400 hover:bg-[#383838] cursor-pointer"
             >
               <X className="w-4 h-4 mr-2" />
