@@ -77,7 +77,7 @@ export function MessageBubble({ message, className, onEdit, isEditMode = true }:
             onClick={handleClick}
           >
             <p className="text-sm leading-relaxed">{message.content}</p>
-            <p className="text-xs text-[#8B5A2B] mt-2 italic">
+            <p className="text-xs text-[#8B5A2B] mt-1 italic">
               (This message was released. It was not sent.)
             </p>
             {/* Message tail */}
