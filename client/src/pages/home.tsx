@@ -229,8 +229,8 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1 pr-2">
                     <h3 className="font-medium text-[#F5F5F5] truncate">
-                      {conv.contact?.name && conv.contact.name.length > 25 
-                        ? `${conv.contact.name.substring(0, 25)}...` 
+                      {conv.contact?.name && conv.contact.name.length > 20 
+                        ? `${conv.contact.name.substring(0, 20)}...` 
                         : conv.contact?.name}
                     </h3>
                     <div className="flex items-center justify-between">
