@@ -42,7 +42,7 @@ export function useAppData() {
     });
   }, []);
 
-  const addContact = useCallback((name: string) => {
+  const addContact = useCallback((name: string): string => {
     const avatarColors: AvatarColor[] = [
       "from-pink-500 to-rose-600",
       "from-blue-500 to-indigo-600",
@@ -54,9 +54,11 @@ export function useAppData() {
       "from-violet-500 to-purple-600",
     ];
 
+    const contactId = crypto.randomUUID();
+
     updateData(data => {
       const newContact: Contact = {
-        id: crypto.randomUUID(),
+        id: contactId,
         name,
         avatar: name.charAt(0).toUpperCase(),
         color: avatarColors[data.contacts.length % avatarColors.length],
@@ -76,6 +78,8 @@ export function useAppData() {
         conversations: [...data.conversations, newConversation],
       };
     });
+
+    return contactId;
   }, [updateData]);
 
   const addMessage = useCallback((contactId: string, content: string) => {

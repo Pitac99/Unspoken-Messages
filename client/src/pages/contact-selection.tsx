@@ -37,19 +37,14 @@ export default function ContactSelectionPage() {
     }
 
     try {
-      addContact(name);
+      const contactId = addContact(name);
       toast({
         title: "Contact Created",
         description: `${name} has been added to your contacts.`,
       });
       
-      // Find the newly created contact and navigate to chat
-      const newContact = data?.contacts.find(c => c.name.toLowerCase() === name.toLowerCase());
-      if (newContact) {
-        setLocation(`/chat/${newContact.id}`);
-      } else {
-        setLocation("/home");
-      }
+      // Navigate directly to chat with the new contact ID
+      setLocation(`/chat/${contactId}`);
     } catch (error) {
       toast({
         title: "Error",
