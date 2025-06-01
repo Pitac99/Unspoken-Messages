@@ -128,14 +128,12 @@ export default function HomePage() {
       </div>
 
       {/* FAB Button */}
-      {conversations.length > 0 && (
-        <Button
-          onClick={handleNewConversation}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-[#D49A6A] hover:bg-amber-600 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110"
-        >
-          <Plus className="w-6 h-6 text-[#1E1E1E]" />
-        </Button>
-      )}
+      <Button
+        onClick={handleNewConversation}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-[#D49A6A] hover:bg-amber-600 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110"
+      >
+        <Plus className="w-6 h-6 text-[#1E1E1E]" />
+      </Button>
     </div>
   );
 }
