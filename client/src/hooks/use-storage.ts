@@ -233,6 +233,17 @@ export function useAppData() {
     // Donation intervals: exactly at messages 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
     
+    // For existing users with high message counts, show modal on next cycle
+    if (totalMessages > 30 && shownIntervals.length === 0) {
+      // Calculate next cycle start
+      const nextCycleStart = Math.ceil(totalMessages / 30) * 30;
+      const nextInterval = nextCycleStart + 3; // Next interval will be at +3 messages
+      
+      if (totalMessages === nextInterval) {
+        return { show: true, interval: 3, totalMessages };
+      }
+    }
+    
     // Check if we've reached an exact interval and haven't shown it yet
     for (const interval of intervals) {
       if (totalMessages === interval && !shownIntervals.includes(interval)) {
