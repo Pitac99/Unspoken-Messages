@@ -387,8 +387,13 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {isClosed ? (
           <div className="space-y-4">
-            {/* Closure Message */}
-            <div className="text-center py-8 bg-[#2D2D2D] rounded-2xl">
+            {/* Show Message History First */}
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} />
+            ))}
+            
+            {/* Closure Message at the End */}
+            <div className="text-center py-8 bg-[#2D2D2D] rounded-2xl mt-6">
               <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold`}>
                 ✓
               </div>
@@ -402,16 +407,6 @@ export default function ChatPage() {
                 This therapeutic conversation has reached its closure.
               </p>
             </div>
-            
-            {/* Show Message History */}
-            {messages.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-300 px-2">Conversation History</h4>
-                {messages.map((msg) => (
-                  <MessageBubble key={msg.id} message={msg} />
-                ))}
-              </div>
-            )}
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-12">
