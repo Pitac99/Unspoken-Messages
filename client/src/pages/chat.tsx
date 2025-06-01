@@ -6,6 +6,7 @@ import { ArrowLeft, Send } from "lucide-react";
 import { MessageBubble } from "@/components/message-bubble";
 import { useAppData } from "@/hooks/use-storage";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/auth";
 
 export default function ChatPage() {
   const [, setLocation] = useLocation();
@@ -18,19 +19,25 @@ export default function ChatPage() {
   const { data, addMessage, getContactMessages } = useAppData();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!auth.isAuthenticated()) {
+      setLocation("/pin-auth");
+      return;
+    }
+    
+    // Extend session on page load
+    auth.extendSession();
+  }, [setLocation]);
+
   const contact = data?.contacts.find(c => c.id === contactId);
   const messages = getContactMessages(contactId || "");
 
   useEffect(() => {
-    console.log('Chat page - contactId:', contactId);
-    console.log('Chat page - contact:', contact);
-    console.log('Chat page - data:', data);
     if (!contactId || !contact) {
-      console.log('Redirecting to home because missing contactId or contact');
       setLocation("/home");
       return;
     }
-  }, [contactId, contact, setLocation, data]);
+  }, [contactId, contact, setLocation]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
