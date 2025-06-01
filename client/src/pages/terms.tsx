@@ -31,51 +31,108 @@ export default function TermsPage() {
       <div className="px-6 pb-6">
         <div className="bg-[#2D2D2D] rounded-2xl p-6 space-y-6">
           <div>
-            <h2 className="text-lg font-semibold mb-3 text-[#F5F5F5]">Privacy & Security</h2>
+            <p className="text-sm text-gray-400 mb-4">Last updated: May 28, 2025</p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">1. Purpose of the App</h3>
             <p className="text-gray-300 text-sm leading-relaxed">
-              UNSPOKEN is designed with your privacy as the top priority. All messages are encrypted locally on your device and never transmitted to external servers. Your therapeutic conversations remain completely private and secure.
+              Unspoken is a digital space for writing personal, unsent messages to people in your life. 
+              Its purpose is emotional release, mental clarity, and self-reflection. This app is not a 
+              messaging service and messages are not transmitted to others.
             </p>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-3 text-[#F5F5F5]">Therapeutic Purpose</h2>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">2. Data Storage and Security</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>• All messages and contact data are stored locally on your device.</p>
+              <p>• Data is secured using encrypted local storage (e.g., Expo SecureStore).</p>
+              <p>• We do not collect, transmit, or store any personal information, messages, or contact lists on our servers.</p>
+              <p>• Biometric security (Face ID / Fingerprint) is optionally available for additional protection.</p>
+              <p>• In case of app removal, phone loss, or reset, all data may be permanently lost. Backups are your responsibility.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">3. User Responsibility</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>As data is stored only on your device:</p>
+              <p>• You are solely responsible for securing your device and access to the app.</p>
+              <p>• The development team cannot be held liable for unauthorized access or loss of content caused by external factors (e.g., device theft, third-party access, or malware).</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">4. No Liability for Emotional Outcomes</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>Unspoken is a self-help tool and should not replace professional mental health support.</p>
+              <p>We disclaim responsibility for:</p>
+              <p>• Any psychological or emotional consequences of using the app.</p>
+              <p>• Actions taken by users based on their messages or app usage.</p>
+              <p>Please consult a licensed therapist for mental health issues.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">5. Donations</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>• Donations made via platforms like BuyMeACoffee are optional.</p>
+              <p>• These contributions support development, hosting, maintenance, and future updates.</p>
+              <p>• Donations are processed externally and securely via third-party services.</p>
+              <p>• No user data (e.g., messages or identities) is shared with or linked to donations.</p>
+              <p>• Donations are non-refundable.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">6. Age Requirement</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>• By using this app, you confirm that you are at least 13 years old (or the minimum legal age required in your jurisdiction).</p>
+              <p>• If you are under 18, parental consent is recommended for use of emotional support tools.</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">7. Intellectual Property</h3>
             <p className="text-gray-300 text-sm leading-relaxed">
-              This application is designed as a tool for emotional expression and mental wellness through therapeutic writing. It is not a replacement for professional mental health treatment. If you're experiencing severe mental health issues, please consult with a qualified healthcare professional.
+              All visual elements, design, and app logic are the property of the Unspoken development team. 
+              You may not copy, redistribute, or alter any part of the app without written permission.
             </p>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-3 text-[#F5F5F5]">Data Usage</h2>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              No personal data is collected, transmitted, or shared. All information remains on your device. You have full control over your data and can export or delete it at any time through the Settings page.
-            </p>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">8. Updates and Changes</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>We reserve the right to modify these Terms and Conditions at any time.</p>
+              <p>Changes will be announced through the app, and the "Last updated" date will be revised accordingly.</p>
+              <p>Continued use of the app implies acceptance of any new terms.</p>
+            </div>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-3 text-[#F5F5F5]">Security Features</h2>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              Your conversations are protected by PIN authentication, optional biometric security, and AES encryption. Regular security updates ensure your therapeutic space remains safe and private.
-            </p>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">9. Contact</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>For questions, feedback, or support:</p>
+              <p>• Use the contact form or support feature available within the app.</p>
+              <p>• For donation-related queries, refer to the respective donation platform.</p>
+            </div>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-3 text-[#F5F5F5]">Limitation of Liability</h2>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              UNSPOKEN is provided "as is" without warranty of any kind. The developers are not liable for any damages arising from the use of this application. Users are responsible for maintaining the security of their device and PIN.
-            </p>
+            <h3 className="text-lg font-semibold mb-2 text-[#D49A6A]">10. Anonymous Usage Tracking</h3>
+            <div className="text-gray-300 text-sm leading-relaxed space-y-1">
+              <p>In order to better understand overall usage and improve the app, Unspoken tracks the total number of messages written across all users.</p>
+              <p>• No content of the messages is collected.</p>
+              <p>• No personal information, identifiers, or device data is tracked.</p>
+              <p>• Only the numeric count of messages is incremented anonymously and stored in a secure backend.</p>
+              <p>• By using the app, you consent to this non-invasive and privacy-respecting tracking.</p>
+            </div>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold mb-3 text-[#F5F5F5]">Changes to Terms</h2>
-            <p className="text-gray-300 text-sm leading-relaxed">
-              These terms may be updated from time to time. Users will be notified of significant changes through the application. Continued use of UNSPOKEN constitutes acceptance of updated terms.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-gray-600">
-            <p className="text-xs text-gray-500">
-              Last updated: December 2024<br />
-              Version 1.0.0
+          <div className="bg-[#383838] p-4 rounded-xl border border-[#D49A6A]/20">
+            <p className="text-sm text-gray-400">
+              By using Unspoken, you confirm that you have read, understood, and agree to these Terms and Conditions.
             </p>
           </div>
         </div>

@@ -1,0 +1,79 @@
+<Text style={styles.heading}>Terms and Conditions</Text>
+<Text style={styles.updated}>Last updated: May 28, 2025</Text>
+
+<Text style={styles.sectionTitle}>1. Purpose of the App</Text>
+<Text style={styles.text}>
+  Unspoken is a digital space for writing personal, unsent messages to people in your life. Its purpose is emotional release, mental clarity, and self-reflection. This app is not a messaging service and messages are not transmitted to others.
+</Text>
+
+<Text style={styles.sectionTitle}>2. Data Storage and Security</Text>
+<Text style={styles.text}>
+  - All messages and contact data are stored locally on your device.{"\n"}
+  - Data is secured using encrypted local storage (e.g., Expo SecureStore).{"\n"}
+  - We do not collect, transmit, or store any personal information, messages, or contact lists on our servers.{"\n"}
+  - Biometric security (Face ID / Fingerprint) is optionally available for additional protection.{"\n"}
+  - In case of app removal, phone loss, or reset, all data may be permanently lost. Backups are your responsibility.
+</Text>
+
+<Text style={styles.sectionTitle}>3. User Responsibility</Text>
+<Text style={styles.text}>
+  As data is stored only on your device:{"\n"}
+  - You are solely responsible for securing your device and access to the app.{"\n"}
+  - The development team cannot be held liable for unauthorized access or loss of content caused by external factors (e.g., device theft, third-party access, or malware).
+</Text>
+
+<Text style={styles.sectionTitle}>4. No Liability for Emotional Outcomes</Text>
+<Text style={styles.text}>
+  Unspoken is a self-help tool and should not replace professional mental health support.{"\n"}
+  We disclaim responsibility for:{"\n"}
+  - Any psychological or emotional consequences of using the app.{"\n"}
+  - Actions taken by users based on their messages or app usage.{"\n"}
+  Please consult a licensed therapist for mental health issues.
+</Text>
+
+<Text style={styles.sectionTitle}>5. Donations</Text>
+<Text style={styles.text}>
+  - Donations made via platforms like BuyMeACoffee are optional.{"\n"}
+  - These contributions support development, hosting, maintenance, and future updates.{"\n"}
+  - Donations are processed externally and securely via third-party services.{"\n"}
+  - No user data (e.g., messages or identities) is shared with or linked to donations.{"\n"}
+  - Donations are non-refundable.
+</Text>
+
+<Text style={styles.sectionTitle}>6. Age Requirement</Text>
+<Text style={styles.text}>
+  - By using this app, you confirm that you are at least 13 years old (or the minimum legal age required in your jurisdiction).{"\n"}
+  - If you are under 18, parental consent is recommended for use of emotional support tools.
+</Text>
+
+<Text style={styles.sectionTitle}>7. Intellectual Property</Text>
+<Text style={styles.text}>
+  All visual elements, design, and app logic are the property of the Unspoken development team. You may not copy, redistribute, or alter any part of the app without written permission.
+</Text>
+
+<Text style={styles.sectionTitle}>8. Updates and Changes</Text>
+<Text style={styles.text}>
+  We reserve the right to modify these Terms and Conditions at any time.{"\n"}
+  Changes will be announced through the app, and the “Last updated” date will be revised accordingly.{"\n"}
+  Continued use of the app implies acceptance of any new terms.
+</Text>
+
+<Text style={styles.sectionTitle}>9. Contact</Text>
+<Text style={styles.text}>
+  For questions, feedback, or support:{"\n"}
+  - Use the contact form or support feature available within the app.{"\n"}
+  - For donation-related queries, refer to the respective donation platform.
+</Text>
+
+<Text style={styles.sectionTitle}>10. Anonymous Usage Tracking</Text>
+<Text style={styles.text}>
+  In order to better understand overall usage and improve the app, Unspoken tracks the total number of messages written across all users.{"\n"}
+  - No content of the messages is collected.{"\n"}
+  - No personal information, identifiers, or device data is tracked.{"\n"}
+  - Only the numeric count of messages is incremented anonymously and stored in a secure backend.{"\n"}
+  - By using the app, you consent to this non-invasive and privacy-respecting tracking.
+</Text>
+
+<Text style={styles.text}>
+  By using Unspoken, you confirm that you have read, understood, and agree to these Terms and Conditions.
+</Text>

@@ -263,9 +263,12 @@ export default function SettingsPage() {
             Support
           </h2>
           <div className="space-y-2">
-            <button className="w-full text-left p-3 rounded-xl hover:bg-[#383838] transition-colors">
+            <button 
+              onClick={() => window.open('https://buymeacoffee.com/unspokendonations', '_blank')}
+              className="w-full text-left p-3 rounded-xl hover:bg-[#383838] transition-colors"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-[#F5F5F5]">Support Development</span>
+                <span className="text-[#F5F5F5]">Donate for Unspoken</span>
                 <ExternalLink className="text-gray-400" size={16} />
               </div>
             </button>
