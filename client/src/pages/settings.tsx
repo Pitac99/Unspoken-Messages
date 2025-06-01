@@ -123,6 +123,7 @@ export default function SettingsPage() {
   };
 
   const handleTerms = () => {
+    sessionStorage.setItem("termsReferrer", "/settings");
     setLocation("/terms");
   };
 
