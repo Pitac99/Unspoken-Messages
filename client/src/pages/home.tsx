@@ -33,11 +33,7 @@ export default function HomePage() {
 
   const handleContactClick = (contactId: string) => {
     console.log('Clicking contact with ID:', contactId);
-    console.log('Current location before navigation:', location);
-    const newPath = `/chat/${contactId}`;
-    console.log('Navigating to:', newPath);
-    setLocation(newPath);
-    console.log('setLocation called');
+    window.location.href = `/chat/${contactId}`;
   };
 
   const handleSettingsClick = () => {
