@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Shield, MessageCircle, Heart } from "lucide-react";
 import { useLocation } from "wouter";
+import logoPath from "@assets/logo_portocaliu.png";
 
 export default function OnboardingPage() {
   const [, setLocation] = useLocation();
@@ -34,6 +35,13 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex flex-col bg-[#1E1E1E] p-6">
       {/* Header */}
       <div className="text-center mb-8 pt-8">
+        <div className="w-20 h-20 mx-auto mb-4">
+          <img 
+            src={logoPath} 
+            alt="UNSPOKEN Logo" 
+            className="w-full h-full object-contain"
+          />
+        </div>
         <h2 className="text-2xl font-semibold mb-2 text-[#F5F5F5]">
           Welcome to Your Safe Space
         </h2>

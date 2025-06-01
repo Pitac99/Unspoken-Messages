@@ -5,6 +5,7 @@ import { Settings, Plus } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { useAppData } from "@/hooks/use-storage";
 import { format } from "date-fns";
+import logoPath from "@assets/logo_portocaliu.png";
 
 export default function HomePage() {
   const [, setLocation] = useLocation();
@@ -49,7 +50,16 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#1E1E1E]">
       {/* Header */}
       <div className="flex items-center justify-between p-6 pb-4">
-        <h1 className="text-2xl font-semibold text-[#F5F5F5]">Conversations</h1>
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8">
+            <img 
+              src={logoPath} 
+              alt="UNSPOKEN" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h1 className="text-2xl font-semibold text-[#F5F5F5]">Conversations</h1>
+        </div>
         <Button
           onClick={handleSettingsClick}
           variant="ghost"

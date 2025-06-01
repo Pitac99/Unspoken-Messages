@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Lock } from "lucide-react";
 import { useLocation } from "wouter";
+import logoPath from "@assets/logo_portocaliu.png";
 
 export default function IntroPage() {
   const [, setLocation] = useLocation();
@@ -18,8 +18,12 @@ export default function IntroPage() {
       <div className="animate-fade-in">
         {/* Logo Container */}
         <div className="mb-12">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-[#D49A6A] to-amber-600 rounded-3xl flex items-center justify-center shadow-2xl">
-            <Lock className="text-3xl text-[#1E1E1E]" size={48} />
+          <div className="w-32 h-32 mx-auto mb-6">
+            <img 
+              src={logoPath} 
+              alt="UNSPOKEN Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-4xl font-semibold mb-3 tracking-tight text-[#F5F5F5]">
             UNSPOKEN
