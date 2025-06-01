@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Send, MoreVertical, Trash2, Edit, Image, X, LogOut } from "lucide-react";
 import { MessageBubble } from "@/components/message-bubble";
+import { Keypad } from "@/components/keypad";
+import { PinDots } from "@/components/pin-dots";
 import { useAppData } from "@/hooks/use-storage";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
@@ -19,6 +21,8 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
+  const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
+  const [unlockPin, setUnlockPin] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -263,7 +267,20 @@ export default function ChatPage() {
     });
   };
 
-  const handleUnlock = () => {
+  const handleUnlockRequest = () => {
+    setUnlockDialogOpen(true);
+  };
+
+  const handleUnlockConfirm = () => {
+    if (!auth.authenticate(unlockPin)) {
+      toast({
+        title: "Invalid PIN",
+        description: "Please enter the correct PIN to unlock this conversation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!contactId || !data) return;
 
     updateData(prevData => ({
@@ -275,11 +292,38 @@ export default function ChatPage() {
       )
     }));
 
+    setUnlockDialogOpen(false);
+    setUnlockPin("");
     toast({
       title: "Conversation Unlocked",
       description: "You can now continue your therapeutic conversation.",
     });
   };
+
+  const handleUnlockCancel = () => {
+    setUnlockDialogOpen(false);
+    setUnlockPin("");
+  };
+
+  const handleUnlockNumberPress = (number: string) => {
+    if (unlockPin.length < 4) {
+      setUnlockPin(prev => prev + number);
+    }
+  };
+
+  const handleUnlockDelete = () => {
+    setUnlockPin(prev => prev.slice(0, -1));
+  };
+
+  // Auto-submit PIN when 4 digits are entered
+  useEffect(() => {
+    if (unlockPin.length === 4 && unlockDialogOpen) {
+      const timer = setTimeout(() => {
+        handleUnlockConfirm();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [unlockPin, unlockDialogOpen]);
 
   // Show loading state while data is being loaded
   if (!data) {
@@ -373,7 +417,7 @@ export default function ChatPage() {
               Delete Current Photo
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={isClosed ? handleUnlock : handleClosure}
+              onClick={isClosed ? handleUnlockRequest : handleClosure}
               className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -451,7 +495,7 @@ export default function ChatPage() {
         <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
           <div className="text-center">
             <Button
-              onClick={handleUnlock}
+              onClick={handleUnlockRequest}
               className="bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] px-8 py-3 rounded-full font-medium"
             >
               Continue Conversation
@@ -519,6 +563,39 @@ export default function ChatPage() {
                 disabled={!newContactName.trim()}
               >
                 Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unlock PIN Dialog */}
+      <Dialog open={unlockDialogOpen} onOpenChange={setUnlockDialogOpen}>
+        <DialogContent className="bg-[#2D2D2D] border-gray-600 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-[#F5F5F5] text-center">Enter PIN to Unlock</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="text-center">
+              <p className="text-gray-300 text-sm mb-4">
+                Please enter your PIN to continue this conversation
+              </p>
+              <PinDots length={4} filled={unlockPin.length} className="justify-center" />
+            </div>
+            
+            <Keypad
+              onNumberPress={handleUnlockNumberPress}
+              onDelete={handleUnlockDelete}
+              className="w-full"
+            />
+            
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleUnlockCancel}
+                variant="outline"
+                className="flex-1 bg-transparent border-gray-600 text-gray-300 hover:bg-[#383838]"
+              >
+                Cancel
               </Button>
             </div>
           </div>
