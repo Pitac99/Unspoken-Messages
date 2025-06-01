@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const [, setLocation] = useLocation();
-  const { data, updateSettings } = useAppData();
+  const { data, updateSettings, resetDonationCounter } = useAppData();
   const { toast } = useToast();
   
   const [pinChangeOpen, setPinChangeOpen] = useState(false);

@@ -217,12 +217,12 @@ export function useAppData() {
     const totalMessages = data.settings.totalMessagesSent;
     const lastPrompt = data.settings.lastDonationPrompt || 0;
     
-    // Donation intervals: 3, 8, 15, 30
+    // Donation intervals: exactly at messages 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
     
-    // Simple check: if we've reached any interval and haven't shown it yet
+    // Check if we've reached an exact interval and haven't shown it yet
     for (const interval of intervals) {
-      if (totalMessages >= interval && totalMessages > lastPrompt) {
+      if (totalMessages === interval && lastPrompt < interval) {
         return { show: true, interval, totalMessages };
       }
     }
@@ -242,6 +242,19 @@ export function useAppData() {
     }));
   }, [data, updateData]);
 
+  const resetDonationCounter = useCallback(() => {
+    if (!data) return;
+    
+    updateData(prevData => ({
+      ...prevData,
+      settings: {
+        ...prevData.settings,
+        totalMessagesSent: 0,
+        lastDonationPrompt: 0,
+      }
+    }));
+  }, [data, updateData]);
+
   return {
     data,
     isLoading,
@@ -255,5 +268,6 @@ export function useAppData() {
     getConversationsWithContacts,
     shouldShowDonationModal,
     markDonationPromptShown,
+    resetDonationCounter,
   };
 }
