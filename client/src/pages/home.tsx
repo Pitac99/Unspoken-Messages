@@ -235,8 +235,8 @@ export default function HomePage() {
                       {conv.isClosed 
                         ? "Closure" 
                         : conv.lastMessage 
-                          ? (conv.lastMessage.length > 50 
-                              ? `${conv.lastMessage.substring(0, 50)}...` 
+                          ? (conv.lastMessage.length > 15 
+                              ? `${conv.lastMessage.substring(0, 15)}...` 
                               : conv.lastMessage)
                           : "Start your conversation..."
                       }
