@@ -335,7 +335,10 @@ export default function ChatPage() {
   // Check for donation modal after sending messages
   useEffect(() => {
     const donationCheck = shouldShowDonationModal();
+    console.log('Donation check result:', donationCheck);
+    console.log('Current settings:', data?.settings);
     if (donationCheck.show && !donationModalOpen) {
+      console.log('Showing donation modal...');
       const timer = setTimeout(() => {
         setDonationModalOpen(true);
       }, 1000); // Show modal 1 second after message is sent
