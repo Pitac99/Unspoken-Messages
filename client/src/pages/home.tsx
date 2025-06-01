@@ -232,7 +232,14 @@ export default function HomePage() {
                       {conv.contact?.name}
                     </h3>
                     <p className="text-gray-400 text-sm truncate">
-                      {conv.lastMessage || "Start your conversation..."}
+                      {conv.isClosed 
+                        ? "Closure" 
+                        : conv.lastMessage 
+                          ? (conv.lastMessage.length > 50 
+                              ? `${conv.lastMessage.substring(0, 50)}...` 
+                              : conv.lastMessage)
+                          : "Start your conversation..."
+                      }
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
