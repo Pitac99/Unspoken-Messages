@@ -171,7 +171,7 @@ export default function HomePage() {
           conversations.map((conv) => {
             const timeText = conv.lastMessageAt 
               ? format(new Date(conv.lastMessageAt), "h:mm a")
-              : "No messages";
+              : "";
 
             return (
               <div
