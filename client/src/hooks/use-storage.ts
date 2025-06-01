@@ -173,6 +173,7 @@ export function useAppData() {
   return {
     data,
     isLoading,
+    updateData,
     addContact,
     addMessage,
     deleteContact,
