@@ -214,16 +214,14 @@ export function useAppData() {
   const shouldShowDonationModal = useCallback(() => {
     if (!data) return { show: false, interval: 0, totalMessages: 0 };
     
-    const totalMessages = data.settings.totalMessagesSent;
+    const totalMessages = data.settings.totalMessagesSent || 0;
     
-    // Handle legacy data migration
+    // Ensure we have the new array structure
     let shownIntervals = data.settings.donationIntervalsShown || [];
     
-    // If using old system, migrate to new system
-    if ('lastDonationPrompt' in data.settings && data.settings.lastDonationPrompt > 0) {
-      const lastPrompt = data.settings.lastDonationPrompt;
-      const intervals = [3, 8, 15, 30];
-      shownIntervals = intervals.filter(interval => interval <= lastPrompt);
+    // If this is a fresh install or reset data, make sure we track properly
+    if (!data.settings.donationIntervalsShown) {
+      shownIntervals = [];
     }
     
     // Donation intervals: exactly at messages 3, 8, 15, 30
