@@ -1,23 +1,34 @@
-# UNSPOKEN - Quick Start în Expo Go
+# UNSPOKEN - Cloud Deployment în Expo
 
-## Metoda cea mai simplă pentru testare
+## Publicare în cloud pentru acces global
 
 ### Pasul 1: Instalează Expo Go pe telefon
 - iOS: App Store → caută "Expo Go"
 - Android: Google Play → caută "Expo Go"
 
-### Pasul 2: Pe computer, în terminal
+### Pasul 2: Configurare și login Expo
 ```bash
 cd expo-app
 npm install
-npx expo start
+npm install -g @expo/cli
+npx expo login
+# Folosește: cristi.david87@gmail.com
 ```
 
-### Pasul 3: Conectează telefonul
-- În terminal va apărea un QR code
-- Deschide Expo Go pe telefon
-- Scanează QR code-ul din terminal
-- Aplicația UNSPOKEN va rula instant pe telefon
+### Pasul 3: Publicare în cloud
+```bash
+npx expo publish --release-channel production
+```
+
+### Pasul 4: Acces din Expo Go
+După publicare, aplicația va fi disponibilă permanent la:
+`exp://exp.host/@cristi.david87@gmail.com/unspoken-app`
+
+Poți accesa aplicația din Expo Go:
+- Deschide Expo Go
+- Mergi la "Profile" tab
+- Caută proiectele tale published
+- Selectează "UNSPOKEN"
 
 ## Ce vei vedea în aplicație
 

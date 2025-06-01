@@ -36,6 +36,13 @@
       "expo-secure-store",
       "expo-local-authentication"
     ],
-    "scheme": "unspoken"
+    "scheme": "unspoken",
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    }
   }
 }
