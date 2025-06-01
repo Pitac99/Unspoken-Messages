@@ -22,7 +22,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const { data, addMessage, getContactMessages, updateData } = useAppData();
+  const { data, addMessage, editMessage, getContactMessages, updateData } = useAppData();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -389,7 +389,12 @@ export default function ChatPage() {
           <div className="space-y-4">
             {/* Show Message History First */}
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble 
+                key={msg.id} 
+                message={msg} 
+                onEdit={editMessage}
+                isEditMode={!isClosed}
+              />
             ))}
             
             {/* Closure Message at the End */}
@@ -430,7 +435,12 @@ export default function ChatPage() {
           </div>
         ) : (
           messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} />
+            <MessageBubble 
+              key={msg.id} 
+              message={msg} 
+              onEdit={editMessage}
+              isEditMode={!isClosed}
+            />
           ))
         )}
         <div ref={messagesEndRef} />

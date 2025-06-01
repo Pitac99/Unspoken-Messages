@@ -132,6 +132,39 @@ export function useAppData() {
     });
   }, [updateData]);
 
+  const editMessage = useCallback((messageId: string, newContent: string) => {
+    updateData(data => {
+      const messageIndex = data.messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) return data;
+
+      const updatedMessages = [...data.messages];
+      updatedMessages[messageIndex] = {
+        ...updatedMessages[messageIndex],
+        content: newContent,
+      };
+
+      // Update conversation's last message if this was the most recent message
+      const message = updatedMessages[messageIndex];
+      const contactMessages = updatedMessages.filter(m => m.contactId === message.contactId);
+      const isLastMessage = contactMessages[contactMessages.length - 1].id === messageId;
+
+      let updatedConversations = data.conversations;
+      if (isLastMessage) {
+        updatedConversations = data.conversations.map(conv => 
+          conv.contactId === message.contactId 
+            ? { ...conv, lastMessage: newContent }
+            : conv
+        );
+      }
+
+      return {
+        ...data,
+        messages: updatedMessages,
+        conversations: updatedConversations,
+      };
+    });
+  }, [updateData]);
+
   const deleteContact = useCallback((contactId: string) => {
     updateData(data => ({
       ...data,
@@ -177,6 +210,7 @@ export function useAppData() {
     updateData,
     addContact,
     addMessage,
+    editMessage,
     deleteContact,
     updateSettings,
     getContactMessages,
