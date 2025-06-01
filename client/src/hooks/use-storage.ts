@@ -215,26 +215,19 @@ export function useAppData() {
     if (!data) return { show: false, interval: 0, totalMessages: 0 };
     
     const totalMessages = data.settings.totalMessagesSent;
-    const lastPrompt = data.settings.lastDonationPrompt;
+    const lastPrompt = data.settings.lastDonationPrompt || 0;
     
     console.log('Donation check details:', { totalMessages, lastPrompt });
     
-    // Donation intervals: 3, 8, 15, 30, then reset
+    // Donation intervals: 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
     
-    // Find which interval we should be at
-    const cycleLength = 30;
-    const messagesInCurrentCycle = totalMessages % cycleLength || totalMessages;
+    console.log('Checking intervals for total messages:', totalMessages);
     
-    console.log('Cycle info:', { messagesInCurrentCycle, cycleLength });
-    
-    // Check if we hit any interval and haven't shown it yet
+    // Simple check: if we've reached any interval and haven't shown it yet
     for (const interval of intervals) {
-      const currentCycleBase = Math.floor(totalMessages / cycleLength) * cycleLength;
-      const shouldShow = messagesInCurrentCycle >= interval && lastPrompt < interval + currentCycleBase;
-      console.log(`Checking interval ${interval}:`, { shouldShow, currentCycleBase, condition: lastPrompt < interval + currentCycleBase });
-      
-      if (shouldShow) {
+      if (totalMessages >= interval && totalMessages > lastPrompt) {
+        console.log(`Should show donation modal for interval ${interval}!`);
         return { show: true, interval, totalMessages };
       }
     }
