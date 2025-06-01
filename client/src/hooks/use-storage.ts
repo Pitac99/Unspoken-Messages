@@ -215,14 +215,14 @@ export function useAppData() {
     if (!data) return { show: false, interval: 0, totalMessages: 0 };
     
     const totalMessages = data.settings.totalMessagesSent;
-    const lastPrompt = data.settings.lastDonationPrompt || 0;
+    const shownIntervals = data.settings.donationIntervalsShown || [];
     
     // Donation intervals: exactly at messages 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
     
     // Check if we've reached an exact interval and haven't shown it yet
     for (const interval of intervals) {
-      if (totalMessages === interval && lastPrompt < interval) {
+      if (totalMessages === interval && !shownIntervals.includes(interval)) {
         return { show: true, interval, totalMessages };
       }
     }
@@ -233,13 +233,21 @@ export function useAppData() {
   const markDonationPromptShown = useCallback(() => {
     if (!data) return;
     
-    updateData(prevData => ({
-      ...prevData,
-      settings: {
-        ...prevData.settings,
-        lastDonationPrompt: prevData.settings.totalMessagesSent,
-      }
-    }));
+    const totalMessages = data.settings.totalMessagesSent;
+    const intervals = [3, 8, 15, 30];
+    
+    // Find the current interval and mark it as shown
+    const currentInterval = intervals.find(interval => totalMessages === interval);
+    
+    if (currentInterval) {
+      updateData(prevData => ({
+        ...prevData,
+        settings: {
+          ...prevData.settings,
+          donationIntervalsShown: [...(prevData.settings.donationIntervalsShown || []), currentInterval],
+        }
+      }));
+    }
   }, [data, updateData]);
 
   const resetDonationCounter = useCallback(() => {
@@ -250,7 +258,7 @@ export function useAppData() {
       settings: {
         ...prevData.settings,
         totalMessagesSent: 0,
-        lastDonationPrompt: 0,
+        donationIntervalsShown: [],
       }
     }));
   }, [data, updateData]);

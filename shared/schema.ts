@@ -57,7 +57,7 @@ export const settingsSchema = z.object({
   autoDeleteDays: z.number().default(30),
   onboardingCompleted: z.boolean().default(false),
   totalMessagesSent: z.number().default(0),
-  lastDonationPrompt: z.number().default(0),
+  donationIntervalsShown: z.array(z.number()).default([]),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
