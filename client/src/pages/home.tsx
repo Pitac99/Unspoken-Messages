@@ -32,6 +32,7 @@ export default function HomePage() {
   const conversations = getConversationsWithContacts();
 
   const handleContactClick = (contactId: string) => {
+    console.log('Clicking contact with ID:', contactId);
     setLocation(`/chat/${contactId}`);
   };
 
