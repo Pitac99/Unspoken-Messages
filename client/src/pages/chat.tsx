@@ -9,6 +9,7 @@ import { ArrowLeft, Send, MoreVertical, Trash2, Edit, Image, X, LogOut } from "l
 import { MessageBubble } from "@/components/message-bubble";
 import { Keypad } from "@/components/keypad";
 import { PinDots } from "@/components/pin-dots";
+import { DonationModal } from "@/components/donation-modal";
 import { useAppData } from "@/hooks/use-storage";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
@@ -23,10 +24,11 @@ export default function ChatPage() {
   const [newContactName, setNewContactName] = useState("");
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
   const [unlockPin, setUnlockPin] = useState("");
+  const [donationModalOpen, setDonationModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const { data, addMessage, editMessage, getContactMessages, updateData } = useAppData();
+  const { data, addMessage, editMessage, getContactMessages, updateData, shouldShowDonationModal, markDonationPromptShown } = useAppData();
   const { toast } = useToast();
 
   useEffect(() => {

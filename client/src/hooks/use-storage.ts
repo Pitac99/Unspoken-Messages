@@ -124,10 +124,17 @@ export function useAppData() {
         };
       }
 
+      // Update total messages count for donation tracking
+      const newTotalMessages = data.settings.totalMessagesSent + 1;
+
       return {
         ...data,
         messages: [...data.messages, message],
         conversations: updatedConversations,
+        settings: {
+          ...data.settings,
+          totalMessagesSent: newTotalMessages,
+        }
       };
     });
   }, [updateData]);
@@ -204,6 +211,41 @@ export function useAppData() {
       });
   }, [data]);
 
+  const shouldShowDonationModal = useCallback(() => {
+    if (!data) return false;
+    
+    const totalMessages = data.settings.totalMessagesSent;
+    const lastPrompt = data.settings.lastDonationPrompt;
+    
+    // Donation intervals: 3, 8, 15, 30, then reset
+    const intervals = [3, 8, 15, 30];
+    
+    // Find which interval we should be at
+    const cycleLength = 30;
+    const messagesInCurrentCycle = totalMessages % cycleLength || totalMessages;
+    
+    // Check if we hit any interval and haven't shown it yet
+    for (const interval of intervals) {
+      if (messagesInCurrentCycle >= interval && lastPrompt < interval + Math.floor(totalMessages / cycleLength) * cycleLength) {
+        return { show: true, interval, totalMessages };
+      }
+    }
+    
+    return { show: false, interval: 0, totalMessages };
+  }, [data]);
+
+  const markDonationPromptShown = useCallback(() => {
+    if (!data) return;
+    
+    updateData(prevData => ({
+      ...prevData,
+      settings: {
+        ...prevData.settings,
+        lastDonationPrompt: prevData.settings.totalMessagesSent,
+      }
+    }));
+  }, [data, updateData]);
+
   return {
     data,
     isLoading,
@@ -215,5 +257,7 @@ export function useAppData() {
     updateSettings,
     getContactMessages,
     getConversationsWithContacts,
+    shouldShowDonationModal,
+    markDonationPromptShown,
   };
 }
