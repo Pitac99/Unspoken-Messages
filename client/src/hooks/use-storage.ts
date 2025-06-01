@@ -233,11 +233,17 @@ export function useAppData() {
     // Donation intervals: exactly at messages 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
     
-    // For existing users with high message counts, show modal immediately on multiples of 10
+    // For existing users with high message counts, integrate into next cycle
     if (totalMessages > 30 && shownIntervals.length === 0) {
-      // Show modal every 10 messages for testing
-      if (totalMessages % 10 === 0 && totalMessages > 130) {
-        return { show: true, interval: totalMessages, totalMessages };
+      // Start new cycle from current position
+      const remainderInCycle = totalMessages % 30;
+      const targetIntervals = [3, 8, 15, 30];
+      
+      // Find next interval that hasn't been reached in current cycle
+      for (const interval of targetIntervals) {
+        if (remainderInCycle === interval) {
+          return { show: true, interval, totalMessages };
+        }
       }
     }
     
