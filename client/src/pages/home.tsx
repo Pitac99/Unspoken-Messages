@@ -71,7 +71,7 @@ export default function HomePage() {
       </div>
 
       {/* Conversations List */}
-      <div className="px-6 space-y-3 mb-6">
+      <div className="px-6 space-y-3 mb-20">
         {conversations.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 bg-[#2D2D2D] rounded-full flex items-center justify-center">
@@ -83,6 +83,12 @@ export default function HomePage() {
             <p className="text-gray-400 mb-6">
               Start your therapeutic journey by creating your first conversation.
             </p>
+            <Button
+              onClick={handleNewConversation}
+              className="bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E]"
+            >
+              Create First Conversation
+            </Button>
           </div>
         ) : (
           conversations.map((conv) => {
@@ -121,15 +127,13 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Create Conversation Button */}
-      <div className="px-6 pb-6">
-        <Button
-          onClick={handleNewConversation}
-          className="w-full bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] font-medium py-4 px-6 rounded-2xl transition-all duration-300 shadow-lg"
-        >
-          {conversations.length === 0 ? "Create First Conversation" : "Create a New Conversation"}
-        </Button>
-      </div>
+      {/* FAB Button */}
+      <Button
+        onClick={handleNewConversation}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-[#D49A6A] hover:bg-amber-600 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110"
+      >
+        <Plus className="w-6 h-6 text-[#1E1E1E]" />
+      </Button>
     </div>
   );
 }
