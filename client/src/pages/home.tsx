@@ -262,7 +262,10 @@ export default function HomePage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="bg-[#2D2D2D] border-gray-600">
                         <DropdownMenuItem 
-                          onClick={() => handleRenameContact(conv.contact)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameContact(conv.contact);
+                          }}
                           className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
                         >
                           <Edit className="w-4 h-4 mr-2" />
