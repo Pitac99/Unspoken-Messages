@@ -22,11 +22,15 @@ export default function ChatPage() {
   const messages = getContactMessages(contactId || "");
 
   useEffect(() => {
+    console.log('Chat page - contactId:', contactId);
+    console.log('Chat page - contact:', contact);
+    console.log('Chat page - data:', data);
     if (!contactId || !contact) {
+      console.log('Redirecting to home because missing contactId or contact');
       setLocation("/home");
       return;
     }
-  }, [contactId, contact, setLocation]);
+  }, [contactId, contact, setLocation, data]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
