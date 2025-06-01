@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Shield, KeyRound, LifeBuoy, ChevronRight, Download, RefreshCw, ExternalLink, Info } from "lucide-react";
+import { ArrowLeft, Shield, KeyRound, LifeBuoy, ChevronRight, Download, RefreshCw, ExternalLink, Info, Database, Trash2 } from "lucide-react";
 import { useAppData } from "@/hooks/use-storage";
 import { auth } from "@/lib/auth";
 import { storage } from "@/lib/storage";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const [, setLocation] = useLocation();
-  const { data, updateSettings, resetDonationCounter } = useAppData();
+  const { data, updateSettings, resetDonationCounter, clearAllData } = useAppData();
   const { toast } = useToast();
   
   const [pinChangeOpen, setPinChangeOpen] = useState(false);
@@ -282,6 +282,30 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-[#F5F5F5]">About UNSPOKEN</span>
                 <Info className="text-gray-400" size={16} />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Data Management Section */}
+        <div className="bg-[#2D2D2D] rounded-2xl p-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center text-[#F5F5F5]">
+            <Database className="text-[#D49A6A] mr-3" size={20} />
+            Data Management
+          </h2>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                if (window.confirm('This will delete all your data including messages, contacts, and reset the donation counter. This action cannot be undone. Are you sure?')) {
+                  clearAllData();
+                  window.location.href = '/intro';
+                }
+              }}
+              className="w-full text-left p-3 rounded-xl hover:bg-red-600/20 transition-colors border border-red-600/30"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-red-400">Clear All Data</span>
+                <Trash2 className="text-red-400" size={16} />
               </div>
             </button>
           </div>

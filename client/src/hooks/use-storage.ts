@@ -296,6 +296,11 @@ export function useAppData() {
     });
   }, [data, updateData]);
 
+  const clearAllData = useCallback(() => {
+    storage.clearAllData();
+    window.location.reload();
+  }, []);
+
   return {
     data,
     isLoading,
@@ -310,5 +315,6 @@ export function useAppData() {
     shouldShowDonationModal,
     markDonationPromptShown,
     resetDonationCounter,
+    clearAllData,
   };
 }
