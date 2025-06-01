@@ -337,6 +337,14 @@ export default function ChatPage() {
     const donationCheck = shouldShowDonationModal();
     console.log('Donation check result:', donationCheck);
     console.log('Current settings:', data?.settings);
+    
+    // Force show modal for testing if we're past interval 30 and haven't shown yet
+    if (data?.settings.totalMessagesSent && data.settings.totalMessagesSent > 80 && !donationModalOpen) {
+      console.log('Forcing donation modal for testing...');
+      setDonationModalOpen(true);
+      return;
+    }
+    
     if (donationCheck.show && !donationModalOpen) {
       console.log('Showing donation modal...');
       const timer = setTimeout(() => {
