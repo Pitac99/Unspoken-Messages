@@ -17,9 +17,20 @@ npm install -g @expo/cli eas-cli
 ```
 
 #### 2. Autentificare
-```bash
+
+**Pentru Windows PowerShell:**
+```powershell
 # Setează token-ul
-export EXPO_TOKEN=ky4l1OHPXTrojZeemFTlRVBQ4Uiq6c6M49Us-4GK
+$env:EXPO_TOKEN="ky4l1OHPXTrojZeemFTlRVBQ4Uiq6c6M49Us-4GK"
+
+# Login
+npx expo login
+```
+
+**Pentru Command Prompt (cmd):**
+```cmd
+# Setează token-ul
+set EXPO_TOKEN=ky4l1OHPXTrojZeemFTlRVBQ4Uiq6c6M49Us-4GK
 
 # Login
 npx expo login
