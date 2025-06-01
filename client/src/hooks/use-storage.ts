@@ -217,17 +217,12 @@ export function useAppData() {
     const totalMessages = data.settings.totalMessagesSent;
     const lastPrompt = data.settings.lastDonationPrompt || 0;
     
-    console.log('Donation check details:', { totalMessages, lastPrompt });
-    
     // Donation intervals: 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
-    
-    console.log('Checking intervals for total messages:', totalMessages);
     
     // Simple check: if we've reached any interval and haven't shown it yet
     for (const interval of intervals) {
       if (totalMessages >= interval && totalMessages > lastPrompt) {
-        console.log(`Should show donation modal for interval ${interval}!`);
         return { show: true, interval, totalMessages };
       }
     }

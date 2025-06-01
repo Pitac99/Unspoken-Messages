@@ -47,10 +47,10 @@ export function DonationModal({ isOpen, onClose, messageCount }: DonationModalPr
               <Heart className="w-6 h-6 text-red-600" />
               <div className="flex-1">
                 <h3 className="font-semibold text-base">
-                  Unspoken has helped you express yourself
+                  Unspoken helped you?
                 </h3>
                 <p className="text-sm opacity-90 mt-1">
-                  You've written {messageCount} therapeutic messages. Consider supporting our mission to help others heal.
+                  If this space brought you peace or clarity, consider supporting us.
                 </p>
               </div>
             </div>
@@ -60,7 +60,7 @@ export function DonationModal({ isOpen, onClose, messageCount }: DonationModalPr
                 size="sm"
                 className="bg-[#1E1E1E] hover:bg-gray-800 text-white px-4 py-2 text-sm font-medium"
               >
-                Support Us
+                Support Unspoken
               </Button>
               <Button
                 onClick={handleClose}
