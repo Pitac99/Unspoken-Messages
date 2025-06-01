@@ -42,6 +42,21 @@ export function useAppData() {
     });
   }, []);
 
+  const updateDataSync = useCallback((updater: (data: AppData) => AppData): AppData | null => {
+    const currentData = data;
+    if (!currentData) return null;
+    
+    const newData = updater(currentData);
+    try {
+      storage.setAppData(newData);
+      setData(newData);
+      return newData;
+    } catch (error) {
+      console.error("Failed to save app data:", error);
+      return currentData;
+    }
+  }, [data]);
+
   const addContact = useCallback((name: string): string => {
     const avatarColors: AvatarColor[] = [
       "from-pink-500 to-rose-600",
@@ -56,7 +71,7 @@ export function useAppData() {
 
     const contactId = crypto.randomUUID();
 
-    updateData(data => {
+    const updatedData = updateDataSync(data => {
       const newContact: Contact = {
         id: contactId,
         name,
@@ -79,8 +94,12 @@ export function useAppData() {
       };
     });
 
+    if (!updatedData) {
+      throw new Error("Failed to create contact");
+    }
+
     return contactId;
-  }, [updateData]);
+  }, [updateDataSync]);
 
   const addMessage = useCallback((contactId: string, content: string) => {
     updateData(data => {
