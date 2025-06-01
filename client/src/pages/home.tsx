@@ -113,6 +113,39 @@ export default function HomePage() {
     });
   };
 
+  const handleUploadImage = (contactId: string) => {
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // Create a FileReader to read the image
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageDataUrl = event.target?.result as string;
+          
+          updateData(data => ({
+            ...data,
+            contacts: data.contacts.map(contact =>
+              contact.id === contactId 
+                ? { ...contact, imageUrl: imageDataUrl }
+                : contact
+            )
+          }));
+
+          toast({
+            title: "Success",
+            description: "Avatar image updated successfully.",
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
@@ -229,11 +262,11 @@ export default function HomePage() {
                           Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => handleChangeAvatar(conv.contact)}
+                          onClick={() => handleUploadImage(conv.contactId)}
                           className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
                         >
                           <ImageIcon className="w-4 h-4 mr-2" />
-                          Change Picture
+                          Change Image
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDeleteConversation(conv.contactId, conv.contact?.name || "")}
