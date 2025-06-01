@@ -215,7 +215,16 @@ export function useAppData() {
     if (!data) return { show: false, interval: 0, totalMessages: 0 };
     
     const totalMessages = data.settings.totalMessagesSent;
-    const shownIntervals = data.settings.donationIntervalsShown || [];
+    
+    // Handle legacy data migration
+    let shownIntervals = data.settings.donationIntervalsShown || [];
+    
+    // If using old system, migrate to new system
+    if ('lastDonationPrompt' in data.settings && data.settings.lastDonationPrompt > 0) {
+      const lastPrompt = data.settings.lastDonationPrompt;
+      const intervals = [3, 8, 15, 30];
+      shownIntervals = intervals.filter(interval => interval <= lastPrompt);
+    }
     
     // Donation intervals: exactly at messages 3, 8, 15, 30
     const intervals = [3, 8, 15, 30];
@@ -240,27 +249,33 @@ export function useAppData() {
     const currentInterval = intervals.find(interval => totalMessages === interval);
     
     if (currentInterval) {
-      updateData(prevData => ({
-        ...prevData,
-        settings: {
-          ...prevData.settings,
-          donationIntervalsShown: [...(prevData.settings.donationIntervalsShown || []), currentInterval],
-        }
-      }));
+      updateData(prevData => {
+        const { lastDonationPrompt, ...settings } = prevData.settings as any;
+        return {
+          ...prevData,
+          settings: {
+            ...settings,
+            donationIntervalsShown: [...(settings.donationIntervalsShown || []), currentInterval],
+          }
+        };
+      });
     }
   }, [data, updateData]);
 
   const resetDonationCounter = useCallback(() => {
     if (!data) return;
     
-    updateData(prevData => ({
-      ...prevData,
-      settings: {
-        ...prevData.settings,
-        totalMessagesSent: 0,
-        donationIntervalsShown: [],
-      }
-    }));
+    updateData(prevData => {
+      const { lastDonationPrompt, ...settings } = prevData.settings as any;
+      return {
+        ...prevData,
+        settings: {
+          ...settings,
+          totalMessagesSent: 0,
+          donationIntervalsShown: [],
+        }
+      };
+    });
   }, [data, updateData]);
 
   return {
