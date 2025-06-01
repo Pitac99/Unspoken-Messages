@@ -212,7 +212,7 @@ export function useAppData() {
   }, [data]);
 
   const shouldShowDonationModal = useCallback(() => {
-    if (!data) return false;
+    if (!data) return { show: false, interval: 0, totalMessages: 0 };
     
     const totalMessages = data.settings.totalMessagesSent;
     const lastPrompt = data.settings.lastDonationPrompt;

@@ -68,6 +68,8 @@ class SecureStorage {
         autoDeleteEnabled: false,
         autoDeleteDays: 30,
         onboardingCompleted: false,
+        totalMessagesSent: 0,
+        lastDonationPrompt: 0,
       },
       version: "1.0.0",
     };

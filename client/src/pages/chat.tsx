@@ -307,6 +307,11 @@ export default function ChatPage() {
     setUnlockPin("");
   };
 
+  const handleDonationModalClose = () => {
+    setDonationModalOpen(false);
+    markDonationPromptShown();
+  };
+
   const handleUnlockNumberPress = (number: string) => {
     if (unlockPin.length < 4) {
       setUnlockPin(prev => prev + number);
@@ -326,6 +331,17 @@ export default function ChatPage() {
       return () => clearTimeout(timer);
     }
   }, [unlockPin, unlockDialogOpen]);
+
+  // Check for donation modal after sending messages
+  useEffect(() => {
+    const donationCheck = shouldShowDonationModal();
+    if (donationCheck.show && !donationModalOpen) {
+      const timer = setTimeout(() => {
+        setDonationModalOpen(true);
+      }, 1000); // Show modal 1 second after message is sent
+      return () => clearTimeout(timer);
+    }
+  }, [data?.settings.totalMessagesSent, shouldShowDonationModal, donationModalOpen]);
 
   // Show loading state while data is being loaded
   if (!data) {
@@ -603,6 +619,13 @@ export default function ChatPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Donation Modal */}
+      <DonationModal
+        isOpen={donationModalOpen}
+        onClose={handleDonationModalClose}
+        messageCount={data?.settings.totalMessagesSent || 0}
+      />
     </div>
   );
 }
