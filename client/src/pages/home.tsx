@@ -176,19 +176,16 @@ export default function HomePage() {
             return (
               <div
                 key={conv.id}
-                className="bg-[#2D2D2D] hover:bg-[#383838] rounded-2xl p-4 transition-all duration-300"
+                className="bg-[#2D2D2D] hover:bg-[#383838] rounded-2xl p-4 transition-all duration-300 cursor-pointer"
+                onClick={() => handleContactClick(conv.contactId)}
               >
                 <div className="flex items-center space-x-4">
                   <div 
-                    className={`w-12 h-12 bg-gradient-to-br ${conv.contact?.color} rounded-full flex items-center justify-center text-white font-semibold cursor-pointer`}
-                    onClick={() => handleContactClick(conv.contactId)}
+                    className={`w-12 h-12 bg-gradient-to-br ${conv.contact?.color} rounded-full flex items-center justify-center text-white font-semibold`}
                   >
                     {conv.contact?.avatar}
                   </div>
-                  <div 
-                    className="flex-1 cursor-pointer"
-                    onClick={() => handleContactClick(conv.contactId)}
-                  >
+                  <div className="flex-1">
                     <h3 className="font-medium text-[#F5F5F5]">
                       {conv.contact?.name}
                     </h3>
