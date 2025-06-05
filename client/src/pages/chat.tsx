@@ -1,11 +1,20 @@
-import { useState, useEffect, useRef } from "react";
-import { useLocation, useParams } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Send, MoreVertical, Trash2, Edit, Image, X, LogOut } from "lucide-react";
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Image
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
+import { Ionicons } from '@expo/vector-icons';
 import { MessageBubble } from "@/components/message-bubble";
 import { Keypad } from "@/components/keypad";
 import { PinDots } from "@/components/pin-dots";
@@ -14,10 +23,13 @@ import { useAppData } from "@/hooks/use-storage";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/auth";
 import type { AvatarColor } from "@/types";
+import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 
-export default function ChatPage() {
-  const [, setLocation] = useLocation();
-  const { contactId } = useParams<{ contactId: string }>();
+type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
+
+export default function ChatPage({ navigation, route }: Props) {
+  const { contactId } = route.params;
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -25,21 +37,26 @@ export default function ChatPage() {
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false);
   const [unlockPin, setUnlockPin] = useState("");
   const [donationModalOpen, setDonationModalOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  const { data, addMessage, editMessage, getContactMessages, updateData, shouldShowDonationModal, markDonationPromptShown } = useAppData();
+  const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const { data, addMessage, editMessage, getContactMessages, updateData, shouldShowDonationModal, markDonationPromptShown, reloadData, deleteMessage } = useAppData();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!auth.isAuthenticated()) {
-      setLocation("/pin-auth");
+      navigation.replace('PinAuth');
       return;
     }
-    
-    // Extend session on page load
     auth.extendSession();
-  }, [setLocation]);
+  }, [navigation]);
+
+  // Reload data when the chat page comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      reloadData();
+    }, [reloadData])
+  );
 
   const contact = data?.contacts.find(c => c.id === contactId);
   const conversation = data?.conversations.find(c => c.contactId === contactId);
@@ -47,585 +64,648 @@ export default function ChatPage() {
   const isClosed = conversation?.isClosed || false;
 
   useEffect(() => {
-    // Only redirect if no contactId is provided
-    if (!contactId) {
-      setLocation("/home");
+    if (!contactId || typeof contactId !== 'string') {
+      navigation.navigate('Home');
       return;
     }
-  }, [contactId, setLocation]);
+  }, [contactId, navigation]);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
+  // Donation modal logic
   useEffect(() => {
-    // Auto-resize textarea
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 128) + "px";
+    const { show } = shouldShowDonationModal();
+    if (show) {
+      setDonationModalOpen(true);
     }
-  }, [message]);
-
-  const handleBack = () => {
-    setLocation("/home");
-  };
+  }, [data?.settings.totalMessagesSent]);
 
   const handleSendMessage = async () => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage || !contactId || isLoading) return;
-
     setIsLoading(true);
     try {
-      addMessage(contactId, trimmedMessage);
       setMessage("");
-      
-      // Reset textarea height
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-      }
+      await addMessage(contactId, trimmedMessage);
+      await reloadData();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const avatarColors: AvatarColor[] = [
-    "from-pink-500 to-rose-600",
-    "from-blue-500 to-indigo-600", 
-    "from-purple-500 to-violet-600",
-    "from-green-500 to-emerald-600",
-    "from-orange-500 to-amber-600",
-    "from-red-500 to-pink-600",
-    "from-cyan-500 to-blue-600",
-    "from-violet-500 to-purple-600"
-  ];
-
-  const handleDeleteAllMessages = () => {
-    if (!contactId || !data) return;
-    
-    updateData(prevData => ({
-      ...prevData,
-      conversations: prevData.conversations.map(conv => 
-        conv.contactId === contactId 
-          ? { ...conv, messageIds: [], lastMessage: "", lastMessageAt: undefined }
-          : conv
-      ),
-      messages: prevData.messages.filter(msg => msg.contactId !== contactId)
-    }));
-
-    toast({
-      title: "Success",
-      description: "All messages deleted successfully.",
-    });
-  };
-
-  const handleRenameContact = () => {
-    const currentContact = data?.contacts.find(c => c.id === contactId);
-    if (currentContact) {
-      setNewContactName(currentContact.name);
-      setRenameDialogOpen(true);
-    }
-  };
-
-  const handleSaveRename = () => {
-    if (!newContactName.trim() || !contactId || !data) return;
-
-    updateData(prevData => ({
-      ...prevData,
-      contacts: prevData.contacts.map(contact =>
-        contact.id === contactId 
-          ? { ...contact, name: newContactName.trim() }
-          : contact
-      )
-    }));
-
-    setRenameDialogOpen(false);
-    setNewContactName("");
-    
-    toast({
-      title: "Success",
-      description: "Contact renamed successfully.",
-    });
-  };
-
-  const handleChangeAvatar = (newColor: AvatarColor) => {
-    if (!contactId || !data) return;
-
-    updateData(prevData => ({
-      ...prevData,
-      contacts: prevData.contacts.map(contact =>
-        contact.id === contactId 
-          ? { ...contact, color: newColor }
-          : contact
-      )
-    }));
-
-    toast({
-      title: "Success",
-      description: "Avatar color changed successfully.",
-    });
-  };
-
-  const handleDeleteCurrentPhoto = () => {
-    if (!contactId || !data) return;
-
-    updateData(prevData => ({
-      ...prevData,
-      contacts: prevData.contacts.map(contact =>
-        contact.id === contactId 
-          ? { ...contact, imageUrl: undefined }
-          : contact
-      )
-    }));
-
-    toast({
-      title: "Success",
-      description: "Avatar photo deleted successfully.",
-    });
-  };
-
-  const handleUploadImage = () => {
-    // Create a file input element
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        // Create a FileReader to read the image
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageDataUrl = event.target?.result as string;
-          
-          if (!contactId || !data) return;
-          
-          updateData(prevData => ({
-            ...prevData,
-            contacts: prevData.contacts.map(contact =>
-              contact.id === contactId 
-                ? { ...contact, imageUrl: imageDataUrl }
-                : contact
-            )
-          }));
-
-          toast({
-            title: "Success",
-            description: "Avatar image updated successfully.",
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
-  };
-
-  const handleDeleteConversation = () => {
-    if (!contactId || !data) return;
-
-    updateData(prevData => ({
-      ...prevData,
-      contacts: prevData.contacts.filter(contact => contact.id !== contactId),
-      conversations: prevData.conversations.filter(conv => conv.contactId !== contactId),
-      messages: prevData.messages.filter(msg => msg.contactId !== contactId)
-    }));
-
-    toast({
-      title: "Success",
-      description: "Conversation deleted successfully.",
-    });
-
-    setLocation("/home");
-  };
-
-  const handleClosure = () => {
-    if (!contactId || !data) return;
-
-    updateData(prevData => ({
-      ...prevData,
-      conversations: prevData.conversations.map(conv =>
-        conv.contactId === contactId 
-          ? { ...conv, isClosed: true }
-          : conv
-      )
-    }));
-
-    toast({
-      title: "Conversation Closed",
-      description: "Your therapeutic journey for this conversation has been completed.",
-    });
-  };
-
-  const handleUnlockRequest = () => {
-    setUnlockDialogOpen(true);
-  };
-
-  const handleUnlockConfirm = () => {
-    if (!auth.authenticate(unlockPin)) {
-      toast({
-        title: "Invalid PIN",
-        description: "Please enter the correct PIN to unlock this conversation.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!contactId || !data) return;
-
-    updateData(prevData => ({
-      ...prevData,
-      conversations: prevData.conversations.map(conv =>
-        conv.contactId === contactId 
-          ? { ...conv, isClosed: false }
-          : conv
-      )
-    }));
-
-    setUnlockDialogOpen(false);
-    setUnlockPin("");
-    toast({
-      title: "Conversation Unlocked",
-      description: "You can now continue your therapeutic conversation.",
-    });
-  };
-
-  const handleUnlockCancel = () => {
-    setUnlockDialogOpen(false);
-    setUnlockPin("");
-  };
-
-  const handleDonationModalClose = () => {
-    setDonationModalOpen(false);
-    markDonationPromptShown();
-  };
-
-  const handleUnlockNumberPress = (number: string) => {
-    if (unlockPin.length < 4) {
-      setUnlockPin(prev => prev + number);
-    }
-  };
-
-  const handleUnlockDelete = () => {
-    setUnlockPin(prev => prev.slice(0, -1));
-  };
-
-  // Auto-submit PIN when 4 digits are entered
-  useEffect(() => {
-    if (unlockPin.length === 4 && unlockDialogOpen) {
-      const timer = setTimeout(() => {
-        handleUnlockConfirm();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [unlockPin, unlockDialogOpen]);
-
-  // Check for donation modal after sending messages
-  useEffect(() => {
-    const donationCheck = shouldShowDonationModal();
-    if (donationCheck.show && !donationModalOpen) {
-      const timer = setTimeout(() => {
-        setDonationModalOpen(true);
-      }, 1000); // Show modal 1 second after message is sent
-      return () => clearTimeout(timer);
-    }
-  }, [data?.settings.totalMessagesSent, shouldShowDonationModal, donationModalOpen]);
-
-  // Show loading state while data is being loaded
-  if (!data) {
-    return (
-      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-300">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If contact doesn't exist yet, we can still show the chat interface
-  // The contact will be created when the first message is sent
   const displayContact = contact || {
     id: contactId,
     name: "New Contact",
     avatar: "?",
-    color: "from-blue-500 to-indigo-600"
+    color: "from-blue-500 to-indigo-600",
+    imageUrl: undefined,
+  };
+
+  // Modal state for options
+  const openOptionsModal = () => setOptionsDialogOpen(true);
+  const closeOptionsModal = () => setOptionsDialogOpen(false);
+
+  // Delete all messages for this contact
+  const handleDeleteAllMessages = () => {
+    updateData(data => ({
+      ...data,
+      messages: data.messages.filter(m => m.contactId !== contactId),
+    }));
+    toast({ title: 'Messages Deleted', description: 'All messages have been deleted.' });
+    closeOptionsModal();
+  };
+
+  // Rename contact (reuse modal logic)
+  const handleRenameFromOptions = () => {
+    closeOptionsModal();
+    setRenameDialogOpen(true);
+  };
+
+  // Change avatar color
+  const handleChangeAvatar = () => {
+    if (!contact) return;
+    const colors: AvatarColor[] = [
+      "from-pink-500 to-rose-600",
+      "from-blue-500 to-indigo-600",
+      "from-purple-500 to-violet-600",
+      "from-green-500 to-emerald-600",
+      "from-orange-500 to-amber-600",
+      "from-red-500 to-pink-600",
+      "from-cyan-500 to-blue-600",
+      "from-violet-500 to-purple-600",
+    ];
+    const currentColorIndex = colors.indexOf(contact.color as AvatarColor);
+    const nextColorIndex = (currentColorIndex + 1) % colors.length;
+    const newColor = colors[nextColorIndex] as AvatarColor;
+    updateData(data => ({
+      ...data,
+      contacts: data.contacts.map(c =>
+        c.id === contact.id ? { ...c, color: newColor } : c
+      )
+    }));
+    toast({ title: 'Avatar Updated', description: 'Contact avatar color has been changed.' });
+    closeOptionsModal();
+  };
+
+  // Change avatar image
+  const handleUploadImage = async () => {
+    if (!contact) return;
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0].uri) {
+        updateData(data => ({
+          ...data,
+          contacts: data.contacts.map(c =>
+            c.id === contact.id ? { ...c, imageUrl: result.assets[0].uri } : c
+          )
+        }));
+        toast({ title: 'Success', description: 'Avatar image updated successfully.' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update avatar image.' });
+    }
+    closeOptionsModal();
+  };
+
+  // Remove avatar image
+  const handleRemovePicture = () => {
+    if (!contact) return;
+    updateData(data => ({
+      ...data,
+      contacts: data.contacts.map(c =>
+        c.id === contact.id ? { ...c, imageUrl: undefined } : c
+      )
+    }));
+    toast({ title: 'Picture Removed', description: 'Avatar picture removed. Default avatar restored.' });
+    closeOptionsModal();
+  };
+
+  // Mark conversation as closed
+  const handleClosure = () => {
+    updateData(data => ({
+      ...data,
+      conversations: data.conversations.map(conv =>
+        conv.contactId === contactId ? { ...conv, isClosed: true } : conv
+      )
+    }));
+    toast({ title: 'Conversation Closed', description: 'This conversation is now closed.' });
+    closeOptionsModal();
+  };
+
+  // Unlock conversation
+  const handleUnlock = () => {
+    setUnlockDialogOpen(true);
+    setUnlockPin("");
+  };
+
+  // Unlock PIN logic
+  useEffect(() => {
+    const tryUnlock = async () => {
+      if (unlockDialogOpen && unlockPin.length === 4) {
+        if (!contact) return;
+        const ok = await auth.authenticate(unlockPin);
+        if (ok) {
+          updateData(data => ({
+            ...data,
+            conversations: data.conversations.map(conv =>
+              conv.contactId === contactId ? { ...conv, isClosed: false } : conv
+            )
+          }));
+          setUnlockDialogOpen(false);
+          setUnlockPin("");
+          toast({ title: 'Conversation Unlocked', description: 'You can now continue this conversation.' });
+        } else {
+          toast({ title: 'Incorrect PIN', description: 'The PIN you entered is incorrect.', variant: 'destructive' });
+          setUnlockPin("");
+        }
+      }
+    };
+    tryUnlock();
+  }, [unlockPin, unlockDialogOpen]);
+
+  // --- Modal for renaming contact ---
+  const renderRenameModal = () => (
+    renameDialogOpen && (
+      <View style={styles.modalOverlay}>
+        <View style={styles.optionsModalContent}>
+          <Text style={styles.modalTitle}>Rename Contact</Text>
+          <TextInput
+            style={styles.input}
+            value={newContactName}
+            onChangeText={setNewContactName}
+            maxLength={32}
+            placeholder="Enter new name"
+            placeholderTextColor="#A0A0A0"
+            autoFocus
+          />
+          <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+            <TouchableOpacity
+              style={[styles.optionsCancelButton, { flex: 1, borderWidth: 1, borderColor: '#383838' }]}
+              onPress={() => {
+                setRenameDialogOpen(false);
+                setNewContactName("");
+              }}
+            >
+              <Text style={styles.optionsCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.saveButton, (!newContactName.trim()) && styles.saveButtonDisabled, { flex: 1 }]}
+              onPress={() => {
+                if (!contact || !newContactName.trim()) return;
+                updateData(data => ({
+                  ...data,
+                  contacts: data.contacts.map(c =>
+                    c.id === contact.id
+                      ? { ...c, name: newContactName.trim(), avatar: newContactName.trim().charAt(0).toUpperCase() }
+                      : c
+                  )
+                }));
+                toast({
+                  title: "Contact Renamed",
+                  description: `Contact renamed to ${newContactName.trim()}`,
+                });
+                setRenameDialogOpen(false);
+                setNewContactName("");
+              }}
+              disabled={!newContactName.trim()}
+            >
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    )
+  );
+
+  // --- Modal for options ---
+  const renderOptionsModal = () => (
+    optionsDialogOpen && (
+      <View style={styles.modalOverlay}>
+        <View style={styles.optionsModalContent}>
+          <Text style={styles.modalTitle}>Conversation Options</Text>
+          <TouchableOpacity style={styles.optionsButton} onPress={handleDeleteAllMessages}>
+            <Ionicons name="trash" size={18} color="#FF5A5A" style={{ marginRight: 10 }} />
+            <Text style={[styles.optionsButtonText, { color: '#FF5A5A' }]}>Delete All Messages</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.optionsButton} onPress={handleRenameFromOptions}>
+            <Ionicons name="pencil" size={18} color="#D49A6A" style={{ marginRight: 10 }} />
+            <Text style={styles.optionsButtonText}>Rename</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.optionsButton} onPress={handleUploadImage}>
+            <Ionicons name="image" size={18} color="#D49A6A" style={{ marginRight: 10 }} />
+            <Text style={styles.optionsButtonText}>Change Picture</Text>
+          </TouchableOpacity>
+          {contact?.imageUrl && (
+            <TouchableOpacity style={styles.optionsButton} onPress={handleRemovePicture}>
+              <Ionicons name="close-circle" size={18} color="#D49A6A" style={{ marginRight: 10 }} />
+              <Text style={styles.optionsButtonText}>Remove Picture</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.optionsButton} onPress={handleClosure}>
+            <Ionicons name="lock-closed" size={18} color="#D49A6A" style={{ marginRight: 10 }} />
+            <Text style={styles.optionsButtonText}>Closure</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.optionsCancelButton} onPress={closeOptionsModal}>
+            <Text style={styles.optionsCancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    )
+  );
+
+  // Editing message logic
+  const inputRef = useRef<TextInput>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  // When editing, set input and focus
+  const handleEditMessage = (msgId: string, content: string) => {
+    setEditingMessageId(msgId);
+    setMessage(content);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  };
+
+  // Save edited message
+  const handleSaveEdit = async () => {
+    if (editingMessageId && message.trim()) {
+      await editMessage(editingMessageId, message.trim());
+      setEditingMessageId(null);
+      setMessage("");
+    }
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setMessage("");
+  };
+
+  // Helper to map AvatarColor to real color value
+  const getAvatarBgColor = (color: AvatarColor | undefined) => {
+    switch (color) {
+      case 'from-pink-500 to-rose-600': return '#EC4899';
+      case 'from-blue-500 to-indigo-600': return '#3B82F6';
+      case 'from-purple-500 to-violet-600': return '#8B5CF6';
+      case 'from-green-500 to-emerald-600': return '#10B981';
+      case 'from-orange-500 to-amber-600': return '#F59E42';
+      case 'from-red-500 to-pink-600': return '#EF4444';
+      case 'from-cyan-500 to-blue-600': return '#06B6D4';
+      case 'from-violet-500 to-purple-600': return '#7C3AED';
+      default: return '#D49A6A';
+    }
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    deleteMessage(messageId);
+    toast({ title: 'Message Deleted', description: 'The message has been deleted.' });
+    if (editingMessageId === messageId) {
+      setEditingMessageId(null);
+      setMessage("");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#1E1E1E] flex flex-col">
-      {/* Header */}
-      <div className="flex items-center space-x-4 p-6 pb-4 bg-[#1E1E1E] border-b border-[#2D2D2D]">
-        <Button
-          onClick={handleBack}
-          variant="ghost"
-          size="icon"
-          className="w-10 h-10 rounded-full bg-[#2D2D2D] hover:bg-[#383838] text-gray-400 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex items-center space-x-3 flex-1">
-          <div className={`w-10 h-10 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white font-medium overflow-hidden`}>
-            {contact?.imageUrl ? (
-              <img 
-                src={contact.imageUrl} 
-                alt={displayContact.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              displayContact.avatar
-            )}
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-[#F5F5F5]">{displayContact.name}</h1>
-            <p className="text-xs text-gray-400">Therapeutic conversation</p>
-          </div>
-        </div>
-        
-        {/* Chat Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 text-gray-400 hover:text-[#F5F5F5] hover:bg-[#383838]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-[#2D2D2D] border-gray-600" align="end">
-            <DropdownMenuItem 
-              onClick={handleDeleteAllMessages}
-              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete all messages
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={handleRenameContact}
-              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={handleUploadImage}
-              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
-            >
-              <Image className="w-4 h-4 mr-2" />
-              Change Image
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={handleDeleteCurrentPhoto}
-              className="text-red-400 hover:bg-[#383838] cursor-pointer"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Delete Current Photo
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={isClosed ? handleUnlockRequest : handleClosure}
-              className="text-[#F5F5F5] hover:bg-[#383838] cursor-pointer"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              {isClosed ? "Unlock" : "Closure"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <KeyboardAvoidingView
+      style={[
+        styles.container,
+        Platform.OS === 'android' && { paddingBottom: 25 }
+      ]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#F5F5F5" />
+        </TouchableOpacity>
+        {/* Avatar */}
+        <TouchableOpacity onPress={handleUploadImage} activeOpacity={0.7}>
+          {displayContact.imageUrl ? (
+            <Image
+              source={{ uri: displayContact.imageUrl }}
+              style={styles.headerAvatar}
+            />
+          ) : (
+            <View style={[styles.headerAvatar, { backgroundColor: getAvatarBgColor(displayContact.color) }]}> 
+              <Text style={styles.headerAvatarText}>{displayContact.avatar}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        {/* Name and subtitle */}
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.contactName}>{displayContact.name}</Text>
+          <Text style={styles.headerSubtitle}>Therapeutic Conversation</Text>
+        </View>
+        {/* Three dots button */}
+        <TouchableOpacity style={styles.headerMoreButton} onPress={openOptionsModal}>
+          <Ionicons name="ellipsis-vertical" size={22} color="#A0A0A0" />
+        </TouchableOpacity>
+      </View>
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <ScrollView ref={scrollViewRef} style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
         {isClosed ? (
-          <div className="space-y-4">
-            {/* Show Message History First */}
+          <View style={{ alignItems: 'center', marginTop: 20 }}>
             {messages.map((msg) => (
-              <MessageBubble 
-                key={msg.id} 
-                message={msg} 
-                onEdit={editMessage}
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onEdit={handleEditMessage}
                 isEditMode={!isClosed}
+                isEditing={editingMessageId === msg.id}
+                onDelete={!isClosed ? handleDeleteMessage : undefined}
               />
             ))}
-            
-            {/* Closure Message at the End */}
-            <div className="text-center py-8 bg-[#2D2D2D] rounded-2xl mt-6 mx-4">
-              <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-semibold`}>
-                ✓
-              </div>
-              <h3 className="text-lg font-medium text-[#F5F5F5] mb-3">
-                We are glad you found closure
-              </h3>
-              <p className="text-gray-300 text-sm mb-2 px-6">
-                We're glad Unspoken has helped you express yourself.
-              </p>
-              <p className="text-gray-400 text-xs px-6">
-                This therapeutic conversation has reached its closure.
-              </p>
-            </div>
-          </div>
+            <View style={{ backgroundColor: '#2D2D2D', padding: 20, borderRadius: 20, alignItems: 'center', marginTop: 20 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#22C55E', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ color: '#fff', fontSize: 24 }}>✓</Text>
+              </View>
+              <Text style={{ color: '#F5F5F5', fontSize: 18, marginBottom: 4 }}>We are glad you found closure</Text>
+              <Text style={{ color: '#A0A0A0', fontSize: 14 }}>This therapeutic conversation has reached its closure.</Text>
+            </View>
+            {/* Unlock button */}
+            <TouchableOpacity style={styles.unlockButton} onPress={handleUnlock}>
+              <Ionicons name="lock-open" size={20} color="#1E1E1E" style={{ marginRight: 8 }} />
+              <Text style={styles.unlockButtonText}>Unlock</Text>
+            </TouchableOpacity>
+          </View>
         ) : messages.length === 0 ? (
-          <div className="text-center py-12">
-            <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br ${displayContact.color} rounded-full flex items-center justify-center text-white text-2xl font-semibold overflow-hidden`}>
-              {contact?.imageUrl ? (
-                <img 
-                  src={contact.imageUrl} 
-                  alt={displayContact.name}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                displayContact.avatar
-              )}
-            </div>
-            <h3 className="text-lg font-medium text-[#F5F5F5] mb-2">
-              Start your conversation with {displayContact.name}
-            </h3>
-            <p className="text-gray-400 text-sm">
-              This is a safe space to express your thoughts and feelings.
-            </p>
-          </div>
+          <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#D49A6A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ color: '#1E1E1E', fontSize: 24 }}>{displayContact.avatar}</Text>
+            </View>
+            <Text style={{ fontSize: 18, color: '#F5F5F5', marginBottom: 8 }}>Start your conversation with {displayContact.name}</Text>
+            <Text style={{ color: '#A0A0A0', fontSize: 14 }}>This is a safe space to express your thoughts and feelings.</Text>
+          </View>
         ) : (
           messages.map((msg) => (
-            <MessageBubble 
-              key={msg.id} 
-              message={msg} 
-              onEdit={editMessage}
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              onEdit={handleEditMessage}
               isEditMode={!isClosed}
+              isEditing={editingMessageId === msg.id}
+              onDelete={!isClosed ? handleDeleteMessage : undefined}
             />
           ))
         )}
-        <div ref={messagesEndRef} />
-      </div>
+      </ScrollView>
 
-      {/* Message Input or Unlock Button */}
-      {isClosed ? (
-        <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
-          <div className="text-center">
-            <Button
-              onClick={handleUnlockRequest}
-              className="bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] px-8 py-3 rounded-full font-medium"
-            >
-              Continue Conversation
-            </Button>
-            <p className="text-gray-400 text-xs mt-2">
-              Unlock to add new messages to this conversation
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="p-6 pt-4 bg-[#1E1E1E] border-t border-[#2D2D2D]">
-          <div className="flex items-end space-x-3">
-            <div className="flex-1">
-              <Textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Write your thoughts..."
-                className="w-full bg-[#2D2D2D] border border-gray-600 rounded-2xl px-4 py-3 text-[#F5F5F5] placeholder-gray-400 focus:border-[#D49A6A] focus:outline-none transition-colors resize-none min-h-[44px] max-h-32 overflow-hidden"
-                rows={1}
-                disabled={isLoading}
-              />
-            </div>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!message.trim() || isLoading}
-              className="w-12 h-12 bg-[#D49A6A] hover:bg-amber-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="w-5 h-5 text-[#1E1E1E]" />
-            </Button>
-          </div>
-        </div>
+      {!isClosed && (
+        <>
+          <View style={styles.inputContainer}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Type your message..."
+              placeholderTextColor="#A0A0A0"
+              multiline
+              maxLength={2000}
+              returnKeyType={editingMessageId ? 'done' : 'default'}
+              onSubmitEditing={editingMessageId ? handleSaveEdit : undefined}
+            />
+            {editingMessageId ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%' }}>
+                <TouchableOpacity
+                  style={[styles.sendButton, (!message.trim() || isLoading) && styles.sendButtonDisabled, { width: 40, height: 40, borderRadius: 20 }]}
+                  onPress={handleSaveEdit}
+                  disabled={!message.trim() || isLoading}
+                >
+                  <Ionicons name="checkmark" size={18} color="#1E1E1E" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sendButton, { backgroundColor: '#A0A0A0', marginLeft: 6, width: 40, height: 40, borderRadius: 20 }]}
+                  onPress={handleCancelEdit}
+                >
+                  <Ionicons name="close" size={18} color="#1E1E1E" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sendButton, { backgroundColor: '#EF4444', marginLeft: 6, width: 40, height: 40, borderRadius: 20 }]}
+                  onPress={() => handleDeleteMessage(editingMessageId)}
+                >
+                  <Ionicons name="trash" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.sendButton, (!message.trim() || isLoading) && styles.sendButtonDisabled]}
+                onPress={handleSendMessage}
+                disabled={!message.trim() || isLoading}
+              >
+                {isLoading ? <ActivityIndicator color="#1E1E1E" size="small" /> : <Ionicons name="send" size={20} color="#1E1E1E" />}
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={{ height: 25, backgroundColor: '#232323' }} />
+        </>
       )}
 
-      {/* Rename Dialog */}
-      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent className="bg-[#2D2D2D] border-gray-600">
-          <DialogHeader>
-            <DialogTitle className="text-[#F5F5F5]">Rename Contact</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-gray-300 mb-2 block">Contact Name</label>
-              <Input
-                value={newContactName}
-                onChange={(e) => setNewContactName(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSaveRename()}
-                placeholder="Enter new name..."
-                className="bg-[#1E1E1E] border-gray-600 text-[#F5F5F5]"
-                autoFocus
-              />
-            </div>
-            <div className="flex space-x-3">
-              <Button
-                onClick={() => setRenameDialogOpen(false)}
-                variant="outline"
-                className="flex-1 bg-transparent border-gray-600 text-gray-300 hover:bg-[#383838]"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveRename}
-                className="flex-1 bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E]"
-                disabled={!newContactName.trim()}
-              >
-                Save
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {unlockDialogOpen && (
+        <View style={styles.unlockDialog}>
+          <Text style={styles.unlockTitle}>Enter PIN to Unlock</Text>
+          <PinDots length={4} filled={unlockPin.length} />
+          <View style={{ height: 24 }} />
+          <Keypad onNumberPress={(n) => {
+            if (unlockPin.length < 4) setUnlockPin(prev => prev + n);
+          }} onDelete={() => setUnlockPin(prev => prev.slice(0, -1))} />
+        </View>
+      )}
 
-      {/* Unlock PIN Dialog */}
-      <Dialog open={unlockDialogOpen} onOpenChange={setUnlockDialogOpen}>
-        <DialogContent className="bg-[#2D2D2D] border-gray-600 max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-[#F5F5F5] text-center">Enter PIN to Unlock</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-gray-300 text-sm mb-4">
-                Please enter your PIN to continue this conversation
-              </p>
-              <PinDots length={4} filled={unlockPin.length} className="justify-center" />
-            </div>
-            
-            <Keypad
-              onNumberPress={handleUnlockNumberPress}
-              onDelete={handleUnlockDelete}
-              className="w-full"
-            />
-            
-            <div className="flex space-x-3">
-              <Button
-                onClick={handleUnlockCancel}
-                variant="outline"
-                className="flex-1 bg-transparent border-gray-600 text-gray-300 hover:bg-[#383838]"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {donationModalOpen && (
+        <DonationModal
+          isOpen={donationModalOpen}
+          onClose={() => {
+            setDonationModalOpen(false);
+            markDonationPromptShown();
+          }}
+          messageCount={data?.settings.totalMessagesSent || 0}
+        />
+      )}
 
-      {/* Donation Modal */}
-      <DonationModal
-        isOpen={donationModalOpen}
-        onClose={handleDonationModalClose}
-        messageCount={data?.settings.totalMessagesSent || 0}
-      />
-    </div>
+      {/* Rename Modal */}
+      {renderRenameModal()}
+      {/* Options Modal */}
+      {renderOptionsModal()}
+    </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#1E1E1E' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 12,
+    minHeight: 85,
+    backgroundColor: '#232323',
+    borderBottomWidth: 1,
+    borderBottomColor: '#232323',
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#2D2D2D',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#D49A6A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerAvatarText: {
+    color: '#1E1E1E',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  headerTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
+  },
+  headerSubtitle: {
+    color: '#A0A0A0',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  contactName: { fontSize: 18, fontWeight: '600', color: '#F5F5F5' },
+  messagesContainer: { flex: 1 },
+  messagesContent: { padding: 16 },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 0,
+    paddingTop: 24,
+    backgroundColor: '#232323',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: 8,
+  },
+  input: {
+    flex: 1,
+    minHeight: 56,
+    maxHeight: 140,
+    backgroundColor: '#2D2D2D',
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    marginRight: 12,
+    color: '#F5F5F5',
+    fontSize: 17,
+    borderWidth: 1,
+    borderColor: '#383838',
+  },
+  sendButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#D49A6A',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonDisabled: { opacity: 0.5 },
+  unlockDialog: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#1E1E1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  unlockTitle: { fontSize: 20, fontWeight: '600', color: '#F5F5F5', marginBottom: 24 },
+  headerMoreButton: {
+    padding: 8,
+    marginLeft: 16,
+  },
+  optionsModalContent: {
+    backgroundColor: '#232323',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 350,
+    alignItems: 'stretch',
+  },
+  optionsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    backgroundColor: '#2D2D2D',
+  },
+  optionsButtonText: {
+    color: '#F5F5F5',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  optionsCancelButton: {
+    marginTop: 8,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  optionsCancelButtonText: {
+    color: '#A0A0A0',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#F5F5F5',
+    marginBottom: 24,
+  },
+  saveButton: {
+    backgroundColor: '#D49A6A',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: { opacity: 0.5 },
+  saveButtonText: {
+    color: '#F5F5F5',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  unlockButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#D49A6A',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    marginTop: 24,
+  },
+  unlockButtonText: {
+    color: '#1E1E1E',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

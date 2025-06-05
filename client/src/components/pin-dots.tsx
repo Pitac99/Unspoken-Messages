@@ -1,25 +1,45 @@
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 
 interface PinDotsProps {
   length: number;
   filled: number;
-  className?: string;
+  style?: any;
 }
 
-export function PinDots({ length, filled, className }: PinDotsProps) {
+export function PinDots({ length, filled, style }: PinDotsProps) {
   return (
-    <div className={cn("flex justify-center space-x-4", className)}>
+    <View style={[styles.container, style]}>
       {Array.from({ length }, (_, index) => (
-        <div
+        <View
           key={index}
-          className={cn(
-            "w-4 h-4 rounded-full border-2 transition-all duration-200",
-            index < filled
-              ? "bg-[#D49A6A] border-[#D49A6A]"
-              : "border-gray-500"
-          )}
+          style={[
+            styles.dot,
+            index < filled ? styles.filledDot : styles.emptyDot
+          ]}
         />
       ))}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  dot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+  },
+  filledDot: {
+    backgroundColor: '#D49A6A',
+    borderColor: '#D49A6A',
+  },
+  emptyDot: {
+    borderColor: '#767577',
+  },
+});

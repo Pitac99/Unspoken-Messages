@@ -1,57 +1,52 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
+import { Ionicons } from '@expo/vector-icons';
 import { Keypad } from "@/components/keypad";
 import { PinDots } from "@/components/pin-dots";
-import { Lock } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import * as LocalAuthentication from 'expo-local-authentication';
 
-export default function PinAuthPage() {
-  const [, setLocation] = useLocation();
+type Props = NativeStackScreenProps<RootStackParamList, 'PinAuth'>;
+
+export default function PinAuthPage({ navigation }: Props) {
   const [pin, setPin] = useState("");
   const [status, setStatus] = useState("Enter PIN");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Check if already authenticated
-    if (auth.isAuthenticated()) {
-      setLocation("/home");
-    }
-  }, [setLocation]);
-
-  const handleNumberPress = (number: string) => {
-    if (pin.length < 4 && !isLoading) {
+  const handleNumberPress = async (number: string) => {
+    if (pin.length < 4 && !isProcessing) {
       const newPin = pin + number;
       setPin(newPin);
 
       if (newPin.length === 4) {
-        validatePin(newPin);
+        await validatePin(newPin);
       }
     }
   };
 
   const handleDelete = () => {
-    if (pin.length > 0 && !isLoading) {
+    if (pin.length > 0 && !isProcessing) {
       setPin(pin.slice(0, -1));
-      setStatus("Enter PIN");
+      if (status !== "Enter PIN") {
+        setStatus("Enter PIN");
+      }
     }
   };
 
   const validatePin = async (pinToValidate: string) => {
-    setIsLoading(true);
+    setIsProcessing(true);
     setStatus("Verifying...");
 
     try {
-      // Add a small delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const isValid = auth.authenticate(pinToValidate);
+      const isValid = await auth.authenticate(pinToValidate);
       
       if (isValid) {
         setStatus("Access granted");
-        setTimeout(() => setLocation("/home"), 500);
+        setTimeout(() => navigation.replace('Home'), 500);
       } else {
         setStatus("Incorrect PIN");
         setPin("");
@@ -62,6 +57,7 @@ export default function PinAuthPage() {
         });
       }
     } catch (error) {
+      console.error("Authentication error:", error);
       setStatus("Authentication error");
       setPin("");
       toast({
@@ -70,22 +66,37 @@ export default function PinAuthPage() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
   const handleBiometric = async () => {
-    if (isLoading) return;
+    if (isProcessing) return;
     
-    setIsLoading(true);
+    setIsProcessing(true);
     setStatus("Authenticating...");
 
     try {
-      // Simulate biometric authentication
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setStatus("Access granted");
-      setTimeout(() => setLocation("/home"), 500);
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        throw new Error('Biometric authentication not available');
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to access Unspoken',
+        fallbackLabel: 'Use PIN instead',
+      });
+
+      if (result.success) {
+        setStatus("Access granted");
+        setTimeout(() => navigation.replace('Home'), 500);
+      } else {
+        throw new Error('Authentication failed');
+      }
     } catch (error) {
+      console.error("Biometric error:", error);
       setStatus("Biometric authentication failed");
       toast({
         title: "Biometric Failed",
@@ -93,36 +104,115 @@ export default function PinAuthPage() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-[#1E1E1E] p-6">
+    <View style={styles.container}>
       {/* Logo */}
-      <div className="text-center mb-12">
-        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#D49A6A] to-amber-600 rounded-2xl flex items-center justify-center">
-          <Lock className="text-xl text-[#1E1E1E]" size={24} />
-        </div>
-        <h2 className="text-xl font-semibold mb-2 text-[#F5F5F5]">
-          Welcome Back
-        </h2>
-        <p className="text-gray-300">Enter your PIN to continue</p>
-      </div>
+      <View style={styles.logoContainer}>
+        <View style={styles.logoWrapper}>
+          <Ionicons name="lock-closed" size={32} color="#1E1E1E" />
+        </View>
+      </View>
 
-      {/* PIN Display */}
-      <div className="text-center mb-12">
-        <PinDots length={4} filled={pin.length} className="mb-6" />
-        <p className="text-sm text-gray-400">{status}</p>
-      </div>
+      {/* Heading and Subheading */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={styles.heading}>Create your PIN</Text>
+        <Text style={styles.subheading}>Choose a 4-digit code to secure your app</Text>
+      </View>
+
+      {/* PIN Dots and Status */}
+      <View style={{ alignItems: 'center', marginBottom: 32 }}>
+        <PinDots length={4} filled={pin.length} />
+        <Text style={[styles.status, isProcessing && styles.processingStatus, { marginTop: 20 }]}>
+          {status}
+        </Text>
+      </View>
 
       {/* Keypad */}
-      <Keypad
-        onNumberPress={handleNumberPress}
-        onDelete={handleDelete}
-        onBiometric={handleBiometric}
-        showBiometric={true}
-      />
-    </div>
+      <View style={{ marginBottom: 24 }}>
+        <Keypad
+          onNumberPress={handleNumberPress}
+          onDelete={handleDelete}
+          showBiometric={false}
+          disabled={isProcessing}
+          buttonTextStyle={{ fontSize: 32 }}
+        />
+      </View>
+
+      {/* Biometric Button */}
+      <TouchableOpacity
+        style={styles.biometricButton}
+        onPress={handleBiometric}
+        disabled={isProcessing}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="finger-print" size={28} color="#D49A6A" style={{ marginRight: 8 }} />
+        <Text style={styles.biometricText}>Enable biometric authentication</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+    padding: 24,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
+    paddingTop: 80,
+  },
+  logoWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#D49A6A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#F5F5F5',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  subheading: {
+    color: '#A0A0A0',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  pinContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  status: {
+    marginTop: 24,
+    fontSize: 14,
+    color: '#A0A0A0',
+  },
+  processingStatus: {
+    color: '#D49A6A',
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: '#232323',
+  },
+  biometricText: {
+    color: '#D49A6A',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});

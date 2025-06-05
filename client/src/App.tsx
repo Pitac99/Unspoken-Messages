@@ -1,9 +1,14 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import { queryClient } from "./lib/queryClient";
+import 'react-native-get-random-values';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
+import * as SystemUI from 'expo-system-ui';
+import { Keyboard } from 'react-native';
 
 // Import all pages
 import IntroPage from "@/pages/intro";
@@ -20,61 +25,91 @@ import NotFound from "@/pages/not-found";
 // Import storage and auth
 import { storage } from "./lib/storage";
 import { auth } from "./lib/auth";
+import { RootStackParamList } from './types/navigation';
 
-function AppRouter() {
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function AppNavigator() {
   return (
-    <Switch>
-      <Route path="/" component={IntroPage} />
-      <Route path="/onboarding" component={OnboardingPage} />
-      <Route path="/pin-setup" component={PinSetupPage} />
-      <Route path="/pin-auth" component={PinAuthPage} />
-      <Route path="/home" component={HomePage} />
-      <Route path="/contact-selection" component={ContactSelectionPage} />
-      <Route path="/chat/:contactId" component={ChatPage} />
-      <Route path="/settings" component={SettingsPage} />
-      <Route path="/terms" component={TermsPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <Stack.Navigator
+      initialRouteName="Intro"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#1E1E1E' }
+      }}
+    >
+      <Stack.Screen name="Intro" component={IntroPage} />
+      <Stack.Screen name="Onboarding" component={OnboardingPage} />
+      <Stack.Screen name="PinSetup" component={PinSetupPage} />
+      <Stack.Screen name="PinAuth" component={PinAuthPage} />
+      <Stack.Screen name="Home" component={HomePage} />
+      <Stack.Screen name="ContactSelection" component={ContactSelectionPage} />
+      <Stack.Screen name="Chat" component={ChatPage} />
+      <Stack.Screen name="Settings" component={SettingsPage} />
+      <Stack.Screen name="Terms" component={TermsPage} />
+    </Stack.Navigator>
   );
 }
 
-function AppInitializer() {
-  useEffect(() => {
-    // Initialize app data if it doesn't exist
-    const appData = storage.getAppData();
-    if (!appData) {
-      storage.initializeAppData();
-    }
-
-    // Check authentication status and redirect accordingly
-    const currentPath = window.location.pathname;
-    
-    // If we're on the root path, determine where to redirect
-    if (currentPath === "/") {
-      if (appData?.settings.onboardingCompleted) {
-        if (auth.isAuthenticated()) {
-          window.location.href = "/home";
-        } else {
-          window.location.href = "/pin-auth";
-        }
-      }
-      // If onboarding not completed, stay on intro page
-    }
-  }, []);
-
-  return <AppRouter />;
+// Set Android navigation bar color as early as possible
+if (Platform.OS === 'android') {
+  SystemUI.setBackgroundColorAsync('#232323');
 }
 
 function App() {
+  // Track keyboard visibility for Android
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      // Initialize app data if it doesn't exist
+      const appData = await storage.getAppData();
+      // If you have an initializeAppData method, call it here
+      // await storage.initializeAppData();
+      // Or set default data as needed
+
+      // Check authentication status and redirect accordingly
+      if (appData?.settings.onboardingCompleted) {
+        if (await auth.isAuthenticated()) {
+          // Use navigation instead of window.location
+          // This will be implemented with proper navigation
+        }
+      }
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+      const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+      return () => {
+        showSub.remove();
+        hideSub.remove();
+      };
+    }
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="max-w-sm mx-auto bg-[#1E1E1E] min-h-screen relative overflow-hidden">
-          <AppInitializer />
-        </div>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer>
+          <SafeAreaView
+            style={{
+              flex: 1,
+              backgroundColor: '#1E1E1E',
+              paddingBottom:
+                Platform.OS === 'android'
+                  ? (keyboardVisible ? 0 : 25)
+                  : 25,
+            }}
+            edges={['bottom', 'left', 'right']}
+          >
+            <AppNavigator />
+          </SafeAreaView>
+        </NavigationContainer>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
 

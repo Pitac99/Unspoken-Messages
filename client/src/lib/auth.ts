@@ -1,5 +1,6 @@
-import { hashPin, verifyPin } from "./encryption";
-import { storage } from "./storage";
+import { storage, STORAGE_KEYS } from "./storage";
+import type { AppData } from "../types";
+import * as Crypto from 'expo-crypto';
 
 export class AuthManager {
   private static instance: AuthManager;
@@ -12,68 +13,163 @@ export class AuthManager {
     return AuthManager.instance;
   }
 
-  isAuthenticated(): boolean {
-    const session = storage.getAuthSession();
+  async isAuthenticated(): Promise<boolean> {
+    const session = await storage.getItem(STORAGE_KEYS.AUTH_SESSION);
     if (!session) return false;
     
-    const now = Date.now();
-    if (now > session.expiry) {
-      storage.clearAuthSession();
+    try {
+      const sessionData = JSON.parse(session);
+      const now = Date.now();
+      if (now > sessionData.expiry) {
+        await storage.removeItem(STORAGE_KEYS.AUTH_SESSION);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error parsing session:", error);
       return false;
     }
-    
-    return true;
   }
 
-  authenticate(pin: string): boolean {
-    const appData = storage.getAppData();
-    if (!appData?.settings.pinHash) {
-      throw new Error("PIN not set up");
-    }
+  async extendSession(): Promise<void> {
+    try {
+      const session = await storage.getItem(STORAGE_KEYS.AUTH_SESSION);
+      if (!session) return;
 
-    const isValid = verifyPin(pin, appData.settings.pinHash);
-    if (isValid) {
       const expiry = Date.now() + this.sessionDuration;
-      storage.setAuthSession(expiry);
+      await storage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify({ expiry }));
+    } catch (error) {
+      console.error("Error extending session:", error);
     }
-
-    return isValid;
   }
 
-  setPin(pin: string): void {
-    const appData = storage.getAppData();
-    if (!appData) {
-      throw new Error("App not initialized");
-    }
+  async authenticate(pin: string): Promise<boolean> {
+    try {
+      const appData = await storage.getAppData();
+      if (!appData?.settings.pinHash) {
+        throw new Error("PIN not set up");
+      }
 
-    appData.settings.pinHash = hashPin(pin);
-    appData.settings.onboardingCompleted = true;
-    storage.setAppData(appData);
-  }
+      const isValid = await this.verifyPinHash(pin, appData.settings.pinHash);
+      
+      if (isValid) {
+        const expiry = Date.now() + this.sessionDuration;
+        await storage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify({ expiry }));
+      }
 
-  changePin(currentPin: string, newPin: string): boolean {
-    const appData = storage.getAppData();
-    if (!appData?.settings.pinHash) {
-      throw new Error("PIN not set up");
-    }
-
-    if (!verifyPin(currentPin, appData.settings.pinHash)) {
+      return isValid;
+    } catch (error) {
+      console.error("Authentication error:", error);
       return false;
     }
-
-    appData.settings.pinHash = hashPin(newPin);
-    storage.setAppData(appData);
-    return true;
   }
 
-  logout(): void {
-    storage.clearAuthSession();
+  async setPin(pin: string): Promise<void> {
+    try {
+      let appData = await storage.getAppData();
+      
+      // Initialize with default data if not exists
+      if (!appData) {
+        const defaultData: AppData = {
+          settings: {
+            pinHash: "",
+            biometricEnabled: false,
+            autoDeleteEnabled: false,
+            autoDeleteDays: 30,
+            onboardingCompleted: false,
+            totalMessagesSent: 0,
+            donationIntervalsShown: [],
+          },
+          contacts: [],
+          messages: [],
+          conversations: [],
+          version: "1.0.0"
+        };
+        
+        await storage.setAppData(defaultData);
+        appData = defaultData;
+      }
+
+      // Set the PIN hash
+      appData.settings.pinHash = await this.hashPin(pin);
+      appData.settings.onboardingCompleted = true;
+      await storage.setAppData(appData);
+
+      // Verify the data was saved correctly
+      const verifyData = await storage.getAppData();
+      if (!verifyData?.settings.pinHash) {
+        throw new Error("Failed to verify PIN setup");
+      }
+    } catch (error) {
+      console.error("Error in setPin:", error);
+      throw new Error("Failed to set PIN: " + (error instanceof Error ? error.message : "Unknown error"));
+    }
   }
 
-  extendSession(): void {
-    if (this.isAuthenticated()) {
-      const expiry = Date.now() + this.sessionDuration;
-      storage.setAuthSession(expiry);
+  async changePin(currentPin: string, newPin: string): Promise<boolean> {
+    try {
+      const appData = await storage.getAppData();
+      if (!appData?.settings.pinHash) {
+        throw new Error("PIN not set up");
+      }
+
+      const isValid = await this.verifyPinHash(currentPin, appData.settings.pinHash);
+      if (!isValid) {
+        return false;
+      }
+
+      appData.settings.pinHash = await this.hashPin(newPin);
+      await storage.setAppData(appData);
+      return true;
+    } catch (error) {
+      console.error("Change PIN error:", error);
+      return false;
+    }
+  }
+
+  async logout(): Promise<void> {
+    await storage.removeItem(STORAGE_KEYS.AUTH_SESSION);
+  }
+
+  private async hashPin(pin: string): Promise<string> {
+    try {
+      // Add a salt to the PIN before hashing
+      const salt = await Crypto.getRandomBytesAsync(16);
+      const saltBase64 = Array.from(salt)
+        .map(byte => String.fromCharCode(byte))
+        .join('');
+      const saltedPin = pin + btoa(saltBase64);
+      
+      // Hash the salted PIN
+      const hash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        saltedPin
+      );
+
+      // Combine salt and hash
+      return btoa(saltBase64) + ':' + hash;
+    } catch (error) {
+      console.error("Error in hashPin:", error);
+      throw error;
+    }
+  }
+
+  private async verifyPinHash(pin: string, storedHash: string): Promise<boolean> {
+    try {
+      const [storedSaltBase64, storedHashValue] = storedHash.split(':');
+      if (!storedSaltBase64 || !storedHashValue) return false;
+
+      const saltedPin = pin + storedSaltBase64;
+      
+      const hash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        saltedPin
+      );
+
+      return hash === storedHashValue;
+    } catch (error) {
+      console.error("PIN verification error:", error);
+      return false;
     }
   }
 }

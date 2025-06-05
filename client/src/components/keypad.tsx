@@ -1,13 +1,15 @@
-import { Button } from "@/components/ui/button";
-import { Fingerprint, Delete } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface KeypadProps {
   onNumberPress: (number: string) => void;
   onDelete: () => void;
   onBiometric?: () => void;
   showBiometric?: boolean;
-  className?: string;
+  disabled?: boolean;
+  style?: any;
+  buttonTextStyle?: any;
 }
 
 export function Keypad({
@@ -15,7 +17,9 @@ export function Keypad({
   onDelete,
   onBiometric,
   showBiometric = true,
-  className,
+  disabled = false,
+  style,
+  buttonTextStyle,
 }: KeypadProps) {
   const numbers = [
     ["1", "2", "3"],
@@ -24,48 +28,104 @@ export function Keypad({
   ];
 
   return (
-    <div className={cn("grid grid-cols-3 gap-4 max-w-xs mx-auto", className)}>
-      {numbers.map((row, rowIndex) =>
-        row.map((number) => (
-          <Button
-            key={number}
-            variant="ghost"
-            className="w-16 h-16 rounded-full bg-[#2D2D2D] hover:bg-[#383838] text-xl font-medium transition-all duration-200 transform active:scale-95"
-            onClick={() => onNumberPress(number)}
-          >
-            {number}
-          </Button>
-        ))
-      )}
+    <View style={[styles.container, style]}>
+      {numbers.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.row}>
+          {row.map((number) => (
+            <TouchableOpacity
+              key={number}
+              style={[styles.button, disabled && styles.buttonDisabled]}
+              onPress={() => onNumberPress(number)}
+              disabled={disabled}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.buttonText, buttonTextStyle, disabled && styles.textDisabled]}>
+                {number}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ))}
       
       {/* Bottom row */}
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-16 h-16 rounded-full bg-[#2D2D2D] hover:bg-[#383838] transition-all duration-200 transform active:scale-95",
-          showBiometric ? "text-[#D49A6A]" : "invisible"
-        )}
-        onClick={onBiometric}
-        disabled={!showBiometric}
-      >
-        <Fingerprint className="w-6 h-6" />
-      </Button>
-      
-      <Button
-        variant="ghost"
-        className="w-16 h-16 rounded-full bg-[#2D2D2D] hover:bg-[#383838] text-xl font-medium transition-all duration-200 transform active:scale-95"
-        onClick={() => onNumberPress("0")}
-      >
-        0
-      </Button>
-      
-      <Button
-        variant="ghost"
-        className="w-16 h-16 rounded-full bg-[#2D2D2D] hover:bg-[#383838] text-gray-400 transition-all duration-200 transform active:scale-95"
-        onClick={onDelete}
-      >
-        <Delete className="w-5 h-5" />
-      </Button>
-    </div>
+      <View style={styles.row}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            (!showBiometric || disabled) && styles.invisible
+          ]}
+          onPress={onBiometric}
+          disabled={!showBiometric || disabled}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name="finger-print" 
+            size={24} 
+            color={disabled ? "#666666" : "#D49A6A"} 
+          />
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.button, disabled && styles.buttonDisabled]}
+          onPress={() => onNumberPress("0")}
+          disabled={disabled}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.buttonText, buttonTextStyle, disabled && styles.textDisabled]}>
+            0
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.button, disabled && styles.buttonDisabled]}
+          onPress={onDelete}
+          disabled={disabled}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name="backspace-outline" 
+            size={20} 
+            color={disabled ? "#666666" : "#A0A0A0"} 
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    maxWidth: 300,
+    alignSelf: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 10,
+  },
+  button: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#2D2D2D',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 3,
+  },
+  buttonDisabled: {
+    backgroundColor: '#1E1E1E',
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 26,
+    fontWeight: '500',
+    color: '#F5F5F5',
+  },
+  textDisabled: {
+    color: '#666666',
+  },
+  invisible: {
+    opacity: 0,
+  },
+});

@@ -1,62 +1,155 @@
-import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
-import logoPath from "@assets/logo_portocaliu.png";
+import React from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
+import { Asset } from 'expo-asset';
 
-export default function IntroPage() {
-  const [, setLocation] = useLocation();
+// Pre-load the asset
+const logoAsset = Asset.fromModule(require('../../../assets/logo_portocaliu.png'));
+logoAsset.downloadAsync(); // Start downloading the asset immediately
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Intro'>;
+
+export default function IntroPage({ navigation }: Props) {
+  const [isLogoLoaded, setIsLogoLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    // Ensure the logo is loaded
+    logoAsset.downloadAsync().then(() => {
+      setIsLogoLoaded(true);
+    });
+  }, []);
 
   const handleAcceptTerms = () => {
-    setLocation("/onboarding");
+    navigation.navigate('Onboarding');
   };
 
   const handleViewTerms = () => {
-    setLocation("/terms");
+    navigation.navigate('Terms');
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-8 text-center bg-[#1E1E1E]">
-      <div className="animate-fade-in">
+    <View style={styles.container}>
+      <View style={styles.content}>
         {/* Logo Container */}
-        <div className="mb-12">
-          <div className="w-32 h-32 mx-auto mb-6">
-            <img 
-              src={logoPath} 
-              alt="UNSPOKEN Logo" 
-              className="w-full h-full object-contain"
+        <View style={styles.logoContainer}>
+          <View style={styles.logoWrapper}>
+            <Image 
+              source={require('../../../assets/logo_portocaliu.png')}
+              style={[styles.logo, !isLogoLoaded && styles.hiddenLogo]}
+              resizeMode="contain"
+              onLoad={() => setIsLogoLoaded(true)}
             />
-          </div>
-          <h1 className="text-4xl font-semibold mb-3 tracking-tight text-[#F5F5F5]">
-            UNSPOKEN
-          </h1>
-          <p className="text-lg text-gray-300 font-light">
+          </View>
+          <Text style={styles.title}>UNSPOKEN</Text>
+          <Text style={styles.subtitle}>
             A therapeutic space for your thoughts
-          </p>
-        </div>
+          </Text>
+        </View>
 
         {/* Welcome Message */}
-        <div className="mb-12 space-y-4">
-          <p className="text-gray-300 leading-relaxed max-w-sm">
+        <View style={styles.messageContainer}>
+          <Text style={styles.message}>
             Express your deepest thoughts in a secure, private environment designed for emotional healing.
-          </p>
-        </div>
+          </Text>
+        </View>
 
         {/* Action Buttons */}
-        <div className="space-y-4 w-full max-w-sm">
-          <Button
-            onClick={handleAcceptTerms}
-            className="w-full bg-[#D49A6A] hover:bg-amber-600 text-[#1E1E1E] font-medium py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            onPress={handleAcceptTerms}
+            style={styles.primaryButton}
           >
-            Accept Terms & Continue
-          </Button>
-          <Button
-            onClick={handleViewTerms}
-            variant="ghost"
-            className="w-full text-[#D49A6A] hover:text-amber-400 font-medium py-3 transition-colors duration-300 underline decoration-dotted"
+            <Text style={styles.primaryButtonText}>Accept Terms & Continue</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={handleViewTerms}
+            style={styles.secondaryButton}
           >
-            View Terms & Conditions
-          </Button>
-        </div>
-      </div>
-    </div>
+            <Text style={styles.secondaryButtonText}>View Terms & Conditions</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  logoWrapper: {
+    width: 128,
+    height: 128,
+    marginBottom: 24,
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: '#F5F5F5',
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#A0A0A0',
+    fontWeight: '300',
+  },
+  messageContainer: {
+    marginBottom: 48,
+  },
+  message: {
+    color: '#A0A0A0',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    width: '100%',
+    gap: 16,
+  },
+  primaryButton: {
+    backgroundColor: '#D49A6A',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#1E1E1E',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  secondaryButton: {
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: '#D49A6A',
+    fontSize: 16,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
+  },
+  hiddenLogo: {
+    opacity: 0,
+  },
+});

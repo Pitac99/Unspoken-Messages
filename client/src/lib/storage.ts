@@ -1,118 +1,209 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { encrypt, decrypt } from "./encryption";
-import type { AppData, Contact, Message, Settings, Conversation } from "../types";
+import type { AppData } from '../types';
 
-const STORAGE_KEYS = {
-  APP_DATA: "unspoken_app_data",
-  AUTH_SESSION: "unspoken_auth_session",
+export const STORAGE_KEYS = {
+  APP_DATA: 'app_data',
+  AUTH_SESSION: 'auth_session',
+  PIN_HASH: 'pin_hash',
+  ONBOARDING_COMPLETE: 'onboarding_complete',
+  TERMS_ACCEPTED: 'terms_accepted'
 } as const;
 
-class SecureStorage {
-  private getEncryptedItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch (error) {
-      console.error("Failed to read from localStorage:", error);
-      return null;
+// Helper to revive date strings to Date objects in AppData
+function reviveAppDataDates(appData: any): AppData {
+  // Convert contacts
+  appData.contacts = appData.contacts.map((contact: any) => ({
+    ...contact,
+    createdAt: new Date(contact.createdAt),
+  }));
+  // Convert messages
+  appData.messages = appData.messages.map((message: any) => ({
+    ...message,
+    timestamp: new Date(message.timestamp),
+  }));
+  // Convert conversations
+  appData.conversations = appData.conversations.map((conversation: any) => ({
+    ...conversation,
+    lastMessageAt: conversation.lastMessageAt ? new Date(conversation.lastMessageAt) : undefined,
+  }));
+  return appData;
+}
+
+class StorageManager {
+  private static instance: StorageManager;
+
+  static getInstance(): StorageManager {
+    if (!StorageManager.instance) {
+      StorageManager.instance = new StorageManager();
     }
+    return StorageManager.instance;
   }
 
-  private setEncryptedItem(key: string, value: string): void {
+  async getItem(key: string): Promise<string | null> {
     try {
-      localStorage.setItem(key, value);
-    } catch (error) {
-      console.error("Failed to write to localStorage:", error);
-      throw new Error("Storage quota exceeded or localStorage unavailable");
-    }
-  }
-
-  private removeItem(key: string): void {
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.error("Failed to remove from localStorage:", error);
-    }
-  }
-
-  getAppData(): AppData | null {
-    try {
-      const encrypted = this.getEncryptedItem(STORAGE_KEYS.APP_DATA);
-      if (!encrypted) return null;
+      const encryptedData = await AsyncStorage.getItem(key);
+      if (!encryptedData) return null;
       
-      const decrypted = decrypt(encrypted);
-      return JSON.parse(decrypted);
+      const decryptedData = await decrypt(encryptedData);
+      
+      // Validate that the decrypted data is valid JSON if it starts with { or [
+      if (decryptedData.startsWith('{') || decryptedData.startsWith('[')) {
+        try {
+          JSON.parse(decryptedData);
+        } catch (error: any) {
+          console.error(`Invalid JSON data for key ${key}:`, error);
+          return null;
+        }
+      }
+      
+      return decryptedData;
     } catch (error) {
-      console.error("Failed to get app data:", error);
+      console.error(`Failed to get encrypted data for key ${key}:`, error);
       return null;
     }
   }
 
-  setAppData(data: AppData): void {
+  async setItem(key: string, value: string): Promise<void> {
     try {
-      const serialized = JSON.stringify(data);
-      const encrypted = encrypt(serialized);
-      this.setEncryptedItem(STORAGE_KEYS.APP_DATA, encrypted);
+      // Validate JSON if the value starts with { or [
+      if (value.startsWith('{') || value.startsWith('[')) {
+        try {
+          JSON.parse(value);
+        } catch (error: any) {
+          throw new Error(`Invalid JSON data for key ${key}: ${error.message}`);
+        }
+      }
+      
+      const encryptedData = await encrypt(value);
+      await AsyncStorage.setItem(key, encryptedData);
     } catch (error) {
-      console.error("Failed to save app data:", error);
-      throw new Error("Failed to save data");
+      console.error(`Failed to set encrypted data for key ${key}:`, error);
+      throw error;
     }
   }
 
-  initializeAppData(): AppData {
-    const defaultData: AppData = {
-      contacts: [],
-      messages: [],
-      conversations: [],
-      settings: {
-        pinHash: "",
-        biometricEnabled: false,
-        autoDeleteEnabled: false,
-        autoDeleteDays: 30,
-        onboardingCompleted: false,
-        totalMessagesSent: 0,
-        donationIntervalsShown: [],
-      },
-      version: "1.0.0",
-    };
-
-    this.setAppData(defaultData);
-    return defaultData;
+  async removeItem(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (error) {
+      // console.error(`Failed to remove item ${key}:`, error);
+      throw error;
+    }
   }
 
-  getAuthSession(): { expiry: number } | null {
+  async getAppData(): Promise<AppData | null> {
     try {
-      const session = localStorage.getItem(STORAGE_KEYS.AUTH_SESSION);
-      return session ? JSON.parse(session) : null;
+      const data = await this.getItem(STORAGE_KEYS.APP_DATA);
+      if (!data) return null;
+
+      return reviveAppDataDates(JSON.parse(data));
     } catch (error) {
-      console.error("Failed to get auth session:", error);
+      console.warn("⚠️ Corrupted app data detected. Resetting app_data.");
+      await this.removeItem(STORAGE_KEYS.APP_DATA); // sterge datele corupte
+      return null; // intoarce null si aplica fallback in App.tsx
+    }
+  }
+
+  async setAppData(data: AppData): Promise<void> {
+    try {
+      await this.setItem(STORAGE_KEYS.APP_DATA, JSON.stringify(data));
+    } catch (error) {
+      // console.error("Error setting app data:", error);
+      throw error;
+    }
+  }
+
+  async clearAllData(): Promise<void> {
+    try {
+      await AsyncStorage.clear();
+    } catch (error) {
+      console.error("Error clearing storage:", error);
+      throw error;
+    }
+  }
+
+  // Auth session methods
+  async getAuthSession(): Promise<{ expiry: number } | null> {
+    try {
+      const session = await this.getItem(STORAGE_KEYS.AUTH_SESSION);
+      if (!session) return null;
+      return JSON.parse(session);
+    } catch {
       return null;
     }
   }
 
-  setAuthSession(expiry: number): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify({ expiry }));
-    } catch (error) {
-      console.error("Failed to set auth session:", error);
-    }
+  async setAuthSession(expiry: number): Promise<void> {
+    await this.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify({ expiry }));
   }
 
-  clearAuthSession(): void {
-    this.removeItem(STORAGE_KEYS.AUTH_SESSION);
+  async clearAuthSession(): Promise<void> {
+    await this.removeItem(STORAGE_KEYS.AUTH_SESSION);
   }
 
-  exportData(): string {
-    const data = this.getAppData();
-    if (!data) {
-      throw new Error("No data to export");
-    }
-    
-    return encrypt(JSON.stringify(data));
+  // Settings methods
+  async getPinHash(): Promise<string | null> {
+    return this.getItem(STORAGE_KEYS.PIN_HASH);
   }
 
-  clearAllData(): void {
-    this.removeItem(STORAGE_KEYS.APP_DATA);
-    this.removeItem(STORAGE_KEYS.AUTH_SESSION);
+  async setPinHash(hash: string): Promise<void> {
+    await this.setItem(STORAGE_KEYS.PIN_HASH, hash);
+  }
+
+  async isOnboardingComplete(): Promise<boolean> {
+    const value = await this.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
+    return value === 'true';
+  }
+
+  async setOnboardingComplete(): Promise<void> {
+    await this.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+  }
+
+  async areTermsAccepted(): Promise<boolean> {
+    const value = await this.getItem(STORAGE_KEYS.TERMS_ACCEPTED);
+    return value === 'true';
+  }
+
+  async setTermsAccepted(): Promise<void> {
+    await this.setItem(STORAGE_KEYS.TERMS_ACCEPTED, 'true');
+  }
+
+  async exportData(): Promise<string> {
+    // Export the current app data as encrypted JSON string
+    const appData = await this.getAppData();
+    if (!appData) throw new Error('No app data to export');
+    // Encrypt the JSON string using the same encryption as setItem
+    const json = JSON.stringify(appData);
+    const encrypted = await encrypt(json);
+    return encrypted;
+  }
+
+  async importData(encryptedData: string): Promise<void> {
+    // Import app data from an encrypted JSON string
+    const decrypted = await decrypt(encryptedData);
+    const appData = JSON.parse(decrypted);
+    await this.setAppData(appData);
+  }
+
+  async exportDataWithPassword(password: string): Promise<string> {
+    // Export the current app data as password-encrypted JSON string
+    const appData = await this.getAppData();
+    if (!appData) throw new Error('No app data to export');
+    const json = JSON.stringify(appData);
+    // Use password-based encryption
+    const { encryptWithPassword } = await import('./encryption');
+    const encrypted = await encryptWithPassword(json, password);
+    return encrypted;
+  }
+
+  async importDataWithPassword(encryptedData: string, password: string): Promise<void> {
+    // Import app data from a password-encrypted JSON string
+    const { decryptWithPassword } = await import('./encryption');
+    const decrypted = await decryptWithPassword(encryptedData, password);
+    const appData = JSON.parse(decrypted);
+    await this.setAppData(appData);
   }
 }
 
-export const storage = new SecureStorage();
+export const storage = StorageManager.getInstance();

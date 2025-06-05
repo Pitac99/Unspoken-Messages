@@ -1,23 +1,26 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Switch } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
 import { Keypad } from "@/components/keypad";
 import { PinDots } from "@/components/pin-dots";
 import { auth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Ionicons } from '@expo/vector-icons';
 
-export default function PinSetupPage() {
-  const [, setLocation] = useLocation();
+type Props = NativeStackScreenProps<RootStackParamList, 'PinSetup'>;
+
+export default function PinSetupPage({ navigation }: Props) {
   const [pin, setPin] = useState("");
   const [confirmedPin, setConfirmedPin] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [status, setStatus] = useState("Enter your PIN");
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleNumberPress = (number: string) => {
-    if (pin.length < 4) {
+  const handleNumberPress = async (number: string) => {
+    if (pin.length < 4 && !isProcessing) {
       const newPin = pin + number;
       setPin(newPin);
 
@@ -31,17 +34,28 @@ export default function PinSetupPage() {
         } else {
           // Confirmation
           if (newPin === confirmedPin) {
+            setIsProcessing(true);
+            setStatus("Setting up your PIN...");
+            
             try {
-              auth.setPin(newPin);
+              await auth.setPin(newPin);
               setStatus("PIN set successfully!");
               toast({
                 title: "PIN Setup Complete",
                 description: "Your PIN has been set successfully.",
               });
-              setTimeout(() => setLocation("/home"), 1000);
+              setTimeout(() => navigation.navigate('PinAuth'), 1000);
             } catch (error) {
+              console.error('Error setting PIN:', error);
               setStatus("Failed to save PIN. Try again.");
+              toast({
+                title: "Error",
+                description: "Failed to set up PIN. Please try again.",
+                variant: "destructive",
+              });
               resetPin();
+            } finally {
+              setIsProcessing(false);
             }
           } else {
             setStatus("PINs do not match. Try again.");
@@ -53,8 +67,11 @@ export default function PinSetupPage() {
   };
 
   const handleDelete = () => {
-    if (pin.length > 0) {
+    if (pin.length > 0 && !isProcessing) {
       setPin(pin.slice(0, -1));
+      if (status !== "Enter your PIN" && status !== "Confirm your PIN") {
+        setStatus(isConfirming ? "Confirm your PIN" : "Enter your PIN");
+      }
     }
   };
 
@@ -70,46 +87,124 @@ export default function PinSetupPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#1E1E1E] p-6">
-      {/* Header */}
-      <div className="text-center mb-12 pt-8">
-        <h2 className="text-2xl font-semibold mb-2 text-[#F5F5F5]">
-          Create Your PIN
-        </h2>
-        <p className="text-gray-300">Choose a 4-digit PIN to secure your thoughts</p>
-      </div>
+    <View style={styles.container}>
+      {/* Logo */}
+      <View style={styles.logoContainer}>
+        <View style={styles.logoWrapper}>
+          <Ionicons name="lock-closed" size={32} color="#1E1E1E" />
+        </View>
+      </View>
 
-      {/* PIN Display */}
-      <div className="text-center mb-12">
-        <PinDots length={4} filled={pin.length} className="mb-6" />
-        <p className="text-sm text-gray-400">{status}</p>
-      </div>
+      {/* Heading and Subheading */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={styles.heading}>Create your PIN</Text>
+        <Text style={styles.subheading}>Choose a 4-digit code to secure your app</Text>
+      </View>
 
-      {/* Custom Keypad */}
-      <div className="flex-1 flex flex-col justify-center">
+      {/* PIN Dots and Status */}
+      <View style={{ alignItems: 'center', marginBottom: 32 }}>
+        <PinDots length={4} filled={pin.length} />
+        <Text style={[styles.status, isProcessing && styles.processingStatus, { marginTop: 20 }]}> 
+          {status}
+        </Text>
+      </View>
+
+      {/* Keypad */}
+      <View style={{ marginBottom: 24 }}>
         <Keypad
           onNumberPress={handleNumberPress}
           onDelete={handleDelete}
           onBiometric={handleBiometric}
           showBiometric={true}
+          disabled={isProcessing}
         />
-      </div>
+      </View>
 
       {/* Biometric Option */}
-      <div className="pt-8">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-3">
-            <Switch
-              checked={biometricEnabled}
-              onCheckedChange={setBiometricEnabled}
-              className="data-[state=checked]:bg-[#D49A6A]"
-            />
-            <span className="text-sm text-gray-300">
-              Enable biometric authentication
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+      <View style={styles.biometricContainer}>
+        <View style={styles.biometricRow}>
+          <Switch
+            value={biometricEnabled}
+            onValueChange={setBiometricEnabled}
+            trackColor={{ false: '#767577', true: '#D49A6A' }}
+            thumbColor={biometricEnabled ? '#f4f3f4' : '#f4f3f4'}
+            disabled={isProcessing}
+          />
+          <Text style={styles.biometricText}>
+            Enable biometric authentication
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+    padding: 24,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 48,
+    paddingTop: 80,
+  },
+  logoWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#D49A6A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#F5F5F5',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  subheading: {
+    color: '#A0A0A0',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  pinDisplay: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  pinDots: {
+    marginBottom: 0,
+  },
+  status: {
+    fontSize: 14,
+    color: '#A0A0A0',
+    textAlign: 'center',
+  },
+  statusSpacing: {
+    marginBottom: 24,
+  },
+  processingStatus: {
+    color: '#D49A6A',
+  },
+  keypadContainer: {
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  biometricContainer: {
+    paddingTop: 0,
+    marginBottom: 0,
+  },
+  biometricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  biometricText: {
+    fontSize: 14,
+    color: '#A0A0A0',
+  }
+});

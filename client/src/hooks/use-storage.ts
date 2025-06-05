@@ -1,30 +1,74 @@
 import { useState, useEffect, useCallback } from "react";
 import { storage } from "../lib/storage";
 import type { AppData, Contact, Message, Conversation, AvatarColor } from "../types";
+import 'react-native-get-random-values'; // sus in fisier, o singura data
+import 'react-native-get-random-values'; // Trebuie primul
+import { v4 as uuidv4 } from 'uuid';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { incrementConversation, incrementMessage } from "@/lib/stats";
+
 
 export function useAppData() {
   const [data, setData] = useState<AppData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
       try {
-        let appData = storage.getAppData();
+        const appData = await storage.getAppData();
         if (!appData) {
-          appData = storage.initializeAppData();
+          // Initialize with default data
+          const defaultData: AppData = {
+            settings: {
+              pinHash: "",
+              biometricEnabled: false,
+              autoDeleteEnabled: false,
+              autoDeleteDays: 30,
+              onboardingCompleted: false,
+              totalMessagesSent: 0,
+              donationIntervalsShown: [],
+              donationCycleIndex: 0,
+              donationNextAt: 5,
+            },
+            contacts: [],
+            messages: [],
+            conversations: [],
+            version: "1.0.0"
+          };
+          await storage.setAppData(defaultData);
+          setData(defaultData);
+        } else {
+          // Migrate settings if missing donationCycleIndex or donationNextAt
+          if (
+            typeof appData.settings.donationCycleIndex === 'undefined' ||
+            typeof appData.settings.donationNextAt === 'undefined'
+          ) {
+            appData.settings.donationCycleIndex = 0;
+            appData.settings.donationNextAt = 5;
+          }
+          setData(appData);
         }
-        setData(appData);
       } catch (error) {
         console.error("Failed to load app data:", error);
-        // Initialize with default data if loading fails
-        const defaultData = storage.initializeAppData();
-        setData(defaultData);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadData();
+  }, []);
+
+  // Expose reloadData to force reload from storage
+  const reloadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const appData = await storage.getAppData();
+      if (appData) {
+        setData(appData);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const updateData = useCallback((updater: (data: AppData) => AppData) => {
@@ -57,7 +101,17 @@ export function useAppData() {
     }
   }, [data]);
 
-  const addContact = useCallback((name: string): string => {
+  // Helper to get or create a unique user ID for analytics
+  async function getUserId(): Promise<string> {
+    let userId = await AsyncStorage.getItem('unspoken_user_id');
+    if (!userId) {
+      userId = uuidv4();
+      await AsyncStorage.setItem('unspoken_user_id', userId);
+    }
+    return userId;
+  }
+
+  const addContact = useCallback(async (name: string): Promise<string> => {
     const avatarColors: AvatarColor[] = [
       "from-pink-500 to-rose-600",
       "from-blue-500 to-indigo-600",
@@ -69,75 +123,94 @@ export function useAppData() {
       "from-violet-500 to-purple-600",
     ];
 
-    const contactId = crypto.randomUUID();
+    const trimmedName = name.trim();
+    const latestData = await storage.getAppData();
+    if (!latestData) throw new Error("Failed to load app data");
+    // Check for duplicate
+    if (latestData.contacts.some(contact => contact.name.toLowerCase() === trimmedName.toLowerCase())) {
+      throw new Error("Contact with this name already exists");
+    }
+    const contactId = uuidv4();
+    const randomColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+    const newContact: Contact = {
+      id: contactId,
+      name: trimmedName,
+      avatar: trimmedName.charAt(0),
+      color: randomColor,
+      createdAt: new Date(),
+    };
+    const newConversation: Conversation = {
+      id: uuidv4(),
+      contactId: newContact.id,
+      messageCount: 0,
+      unreadCount: 0,
+      isClosed: false,
+      lastMessage: undefined,
+      lastMessageAt: undefined,
+    };
+    const updatedData: AppData = {
+      ...latestData,
+      contacts: [...latestData.contacts, newContact],
+      conversations: [...latestData.conversations, newConversation],
+    };
+    await storage.setAppData(updatedData);
+    setData(updatedData);
+    // Track in Supabase
+    const userId = await getUserId();
+    incrementConversation(userId);
+    return contactId;
+  }, []);
 
-    const updatedData = updateDataSync(data => {
-      const newContact: Contact = {
-        id: contactId,
-        name,
-        avatar: name.charAt(0).toUpperCase(),
-        color: avatarColors[data.contacts.length % avatarColors.length],
-        createdAt: new Date(),
+  const addMessage = useCallback(async (contactId: string, content: string) => {
+    // Always fetch the latest data from storage before updating
+    const latestData = await storage.getAppData();
+    if (!latestData) throw new Error("Failed to load app data");
+    const message: Message = {
+      id: uuidv4(),
+      contactId,
+      content,
+      timestamp: new Date(),
+      isRead: true,
+    };
+    let updatedConversations = [...latestData.conversations];
+    let conversationIndex = latestData.conversations.findIndex(c => c.contactId === contactId);
+    if (conversationIndex !== -1) {
+      // Update existing conversation
+      updatedConversations[conversationIndex] = {
+        ...updatedConversations[conversationIndex],
+        lastMessage: content,
+        lastMessageAt: new Date(),
+        messageCount: updatedConversations[conversationIndex].messageCount + 1,
       };
-
-      const newConversation: Conversation = {
-        id: crypto.randomUUID(),
-        contactId: newContact.id,
-        messageCount: 0,
+    } else {
+      // Create new conversation if it doesn't exist
+      updatedConversations.push({
+        id: uuidv4(),
+        contactId,
+        lastMessage: content,
+        lastMessageAt: new Date(),
+        messageCount: 1,
         unreadCount: 0,
         isClosed: false,
-      };
-
-      return {
-        ...data,
-        contacts: [...data.contacts, newContact],
-        conversations: [...data.conversations, newConversation],
-      };
-    });
-
-    if (!updatedData) {
-      throw new Error("Failed to create contact");
+      });
     }
-
-    return contactId;
-  }, [updateDataSync]);
-
-  const addMessage = useCallback((contactId: string, content: string) => {
-    updateData(data => {
-      const message: Message = {
-        id: crypto.randomUUID(),
-        contactId,
-        content,
-        timestamp: new Date(),
-        isRead: true,
-      };
-
-      const conversationIndex = data.conversations.findIndex(c => c.contactId === contactId);
-      const updatedConversations = [...data.conversations];
-      
-      if (conversationIndex !== -1) {
-        updatedConversations[conversationIndex] = {
-          ...updatedConversations[conversationIndex],
-          lastMessage: content,
-          lastMessageAt: new Date(),
-          messageCount: updatedConversations[conversationIndex].messageCount + 1,
-        };
+    // Update total messages count for donation tracking
+    const newTotalMessages = latestData.settings.totalMessagesSent + 1;
+    const updatedData: AppData = {
+      ...latestData,
+      messages: [...latestData.messages, message],
+      conversations: updatedConversations,
+      settings: {
+        ...latestData.settings,
+        totalMessagesSent: newTotalMessages,
       }
-
-      // Update total messages count for donation tracking
-      const newTotalMessages = data.settings.totalMessagesSent + 1;
-
-      return {
-        ...data,
-        messages: [...data.messages, message],
-        conversations: updatedConversations,
-        settings: {
-          ...data.settings,
-          totalMessagesSent: newTotalMessages,
-        }
-      };
-    });
-  }, [updateData]);
+    };
+    await storage.setAppData(updatedData);
+    setData(updatedData);
+    // Track in Supabase
+    const userId = await getUserId();
+    incrementMessage(userId);
+  }, []);
 
   const editMessage = useCallback((messageId: string, newContent: string) => {
     updateData(data => {
@@ -197,109 +270,119 @@ export function useAppData() {
 
   const getConversationsWithContacts = useCallback(() => {
     if (!data) return [];
-    
-    return data.conversations
-      .map(conv => {
-        const contact = data.contacts.find(c => c.id === conv.contactId);
-        return contact ? { ...conv, contact } : null;
-      })
-      .filter(Boolean)
-      .sort((a, b) => {
-        const aTime = a!.lastMessageAt ? new Date(a!.lastMessageAt).getTime() : 0;
-        const bTime = b!.lastMessageAt ? new Date(b!.lastMessageAt).getTime() : 0;
-        return bTime - aTime;
-      });
+    return data.conversations.map(conversation => {
+      const contact = data.contacts.find(c => c.id === conversation.contactId);
+      if (!contact) return null;
+      // Find the last message from the messages array
+      const lastMessageObj = data.messages
+        .filter(m => m.contactId === contact.id)
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+      // Fallback: use conversation.lastMessage if no message object found
+      let lastMessage = undefined;
+      if (lastMessageObj) {
+        lastMessage = {
+          text: lastMessageObj.content,
+          timestamp: lastMessageObj.timestamp.toString(),
+        };
+      } else if (conversation.lastMessage) {
+        lastMessage = {
+          text: conversation.lastMessage,
+          timestamp: conversation.lastMessageAt ? conversation.lastMessageAt.toString() : '',
+        };
+      }
+      return {
+        contact: {
+          id: contact.id,
+          name: contact.name,
+          avatar: contact.avatar,
+          color: contact.color,
+          imageUrl: contact.imageUrl,
+        },
+        lastMessage,
+        isClosed: conversation.isClosed,
+      };
+    }).filter(Boolean);
   }, [data]);
 
+  // Custom donation modal cycle: 5, 10, 20, then reset to 5
+  const donationCycle = [5, 10, 20];
   const shouldShowDonationModal = useCallback(() => {
-    if (!data) return { show: false, interval: 0, totalMessages: 0 };
-    
+    if (!data) return { show: false, nextAt: 0, totalMessages: 0 };
     const totalMessages = data.settings.totalMessagesSent || 0;
-    
-    // Auto-migrate: add missing donationIntervalsShown field
-    if (!data.settings.donationIntervalsShown) {
-      updateData(prevData => ({
-        ...prevData,
-        settings: {
-          ...prevData.settings,
-          donationIntervalsShown: []
-        }
-      }));
+    const cycleIndex = data.settings.donationCycleIndex || 0;
+    const nextAt = (data.settings.donationNextAt != null)
+      ? data.settings.donationNextAt
+      : donationCycle[0];
+    if (totalMessages >= nextAt) {
+      return { show: true, nextAt, totalMessages };
     }
-    
-    // Ensure we have the new array structure
-    let shownIntervals = data.settings.donationIntervalsShown || [];
-    
-    // Donation intervals: exactly at messages 3, 8, 15, 30
-    const intervals = [3, 8, 15, 30];
-    
-    // For existing users with high message counts, integrate into next cycle
-    if (totalMessages > 30 && shownIntervals.length === 0) {
-      // Start new cycle from current position
-      const remainderInCycle = totalMessages % 30;
-      const targetIntervals = [3, 8, 15, 30];
-      
-      // Find next interval that hasn't been reached in current cycle
-      for (const interval of targetIntervals) {
-        if (remainderInCycle === interval) {
-          return { show: true, interval, totalMessages };
-        }
-      }
-    }
-    
-    // Check if we've reached an exact interval and haven't shown it yet
-    for (const interval of intervals) {
-      if (totalMessages === interval && !shownIntervals.includes(interval)) {
-        return { show: true, interval, totalMessages };
-      }
-    }
-    
-    return { show: false, interval: 0, totalMessages };
-  }, [data, updateData]);
+    return { show: false, nextAt, totalMessages };
+  }, [data]);
 
   const markDonationPromptShown = useCallback(() => {
     if (!data) return;
-    
-    const totalMessages = data.settings.totalMessagesSent;
-    const intervals = [3, 8, 15, 30];
-    
-    // Find the current interval and mark it as shown
-    const currentInterval = intervals.find(interval => totalMessages === interval);
-    
-    if (currentInterval) {
-      updateData(prevData => {
-        const { lastDonationPrompt, ...settings } = prevData.settings as any;
-        return {
-          ...prevData,
-          settings: {
-            ...settings,
-            donationIntervalsShown: [...(settings.donationIntervalsShown || []), currentInterval],
-          }
-        };
-      });
-    }
+    const cycleIndex = data.settings.donationCycleIndex || 0;
+    let nextIndex = cycleIndex + 1;
+    if (nextIndex >= donationCycle.length) nextIndex = 0;
+    const nextAt = (data.settings.totalMessagesSent || 0) + donationCycle[nextIndex];
+    updateData(prevData => ({
+      ...prevData,
+      settings: {
+        ...prevData.settings,
+        donationCycleIndex: nextIndex,
+        donationNextAt: nextAt,
+      }
+    }));
   }, [data, updateData]);
 
   const resetDonationCounter = useCallback(() => {
     if (!data) return;
     
-    updateData(prevData => {
-      const { lastDonationPrompt, ...settings } = prevData.settings as any;
-      return {
-        ...prevData,
-        settings: {
-          ...settings,
-          totalMessagesSent: 0,
-          donationIntervalsShown: [],
-        }
-      };
-    });
+    updateData(prevData => ({
+      ...prevData,
+      settings: {
+        ...prevData.settings,
+        totalMessagesSent: 0,
+        donationIntervalsShown: [],
+      }
+    }));
   }, [data, updateData]);
 
   const clearAllData = useCallback(() => {
     storage.clearAllData();
     window.location.reload();
   }, []);
+
+  const deleteMessage = useCallback((messageId: string) => {
+    updateData(data => {
+      const messageToDelete = data.messages.find(m => m.id === messageId);
+      if (!messageToDelete) return data;
+      const updatedMessages = data.messages.filter(m => m.id !== messageId);
+      // Update conversation's last message if this was the most recent message
+      const contactMessages = updatedMessages.filter(m => m.contactId === messageToDelete.contactId);
+      let updatedConversations = data.conversations;
+      if (contactMessages.length > 0) {
+        const lastMsg = contactMessages[contactMessages.length - 1];
+        updatedConversations = data.conversations.map(conv =>
+          conv.contactId === messageToDelete.contactId
+            ? { ...conv, lastMessage: lastMsg.content, lastMessageAt: lastMsg.timestamp }
+            : conv
+        );
+      } else {
+        // No messages left for this contact
+        updatedConversations = data.conversations.map(conv =>
+          conv.contactId === messageToDelete.contactId
+            ? { ...conv, lastMessage: undefined, lastMessageAt: undefined, messageCount: 0 }
+            : conv
+        );
+      }
+      return {
+        ...data,
+        messages: updatedMessages,
+        conversations: updatedConversations,
+      };
+    });
+  }, [updateData]);
 
   return {
     data,
@@ -308,6 +391,7 @@ export function useAppData() {
     addContact,
     addMessage,
     editMessage,
+    deleteMessage,
     deleteContact,
     updateSettings,
     getContactMessages,
@@ -316,5 +400,6 @@ export function useAppData() {
     markDonationPromptShown,
     resetDonationCounter,
     clearAllData,
+    reloadData,
   };
 }
