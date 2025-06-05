@@ -10,12 +10,16 @@ import { useToast } from "@/hooks/use-toast";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import { useTheme } from "@/context/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export default function SettingsPage({ navigation }: Props) {
+  console.log("SettingsPage rendered");
   const { data, updateSettings, resetDonationCounter, clearAllData } = useAppData();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
+  const styles = getStyles(theme);
   
   const [pinChangeOpen, setPinChangeOpen] = useState(false);
   const [resetPinOpen, setResetPinOpen] = useState(false);
@@ -34,6 +38,12 @@ export default function SettingsPage({ navigation }: Props) {
   const [passwordError, setPasswordError] = useState("");
   const [pendingFileContent, setPendingFileContent] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactSending, setContactSending] = useState(false);
 
   const handleBack = () => {
     navigation.navigate('Home');
@@ -330,6 +340,44 @@ export default function SettingsPage({ navigation }: Props) {
     Linking.openURL(url);
   };
 
+  const handleOpenContact = () => {
+    setContactModalOpen(true);
+  };
+  const handleCloseContact = () => {
+    setContactModalOpen(false);
+    setContactName("");
+    setContactEmail("");
+    setContactMessage("");
+    setContactSending(false);
+  };
+  const handleSendContact = async () => {
+    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
+      toast({ title: "Missing Fields", description: "Please fill in all fields.", variant: "destructive" });
+      return;
+    }
+    setContactSending(true);
+    try {
+      const response = await fetch('https://formspree.io/f/xkgbgyba', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: contactName,
+          email: contactEmail,
+          message: contactMessage,
+        }),
+      });
+      if (response.ok) {
+        toast({ title: "Message Sent", description: "Thank you for contacting us!" });
+        handleCloseContact();
+      } else {
+        toast({ title: "Error", description: "Failed to send message. Please try again.", variant: "destructive" });
+      }
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to send message. Please try again.", variant: "destructive" });
+    }
+    setContactSending(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -364,6 +412,19 @@ export default function SettingsPage({ navigation }: Props) {
             />
           </View>
 
+          <View style={styles.settingItem}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingTitle}>Dark Mode</Text>
+              <Text style={styles.settingDescription}>Enable dark theme</Text>
+            </View>
+            <Switch
+              value={theme === "dark"}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#767577', true: '#D49A6A' }}
+              thumbColor={theme === "dark" ? '#f4f3f4' : '#f4f3f4'}
+            />
+          </View>
+
           <TouchableOpacity
             style={styles.settingButton}
             onPress={openPinChangeModal}
@@ -394,6 +455,14 @@ export default function SettingsPage({ navigation }: Props) {
           >
             <Text style={styles.settingButtonText}>Terms & Privacy</Text>
             <Ionicons name="document-text-outline" size={16} color="#A0A0A0" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingButton}
+            onPress={handleOpenContact}
+          >
+            <Text style={styles.settingButtonText}>Contact Us</Text>
+            <Ionicons name="mail-outline" size={16} color="#A0A0A0" />
           </TouchableOpacity>
         </View>
 
@@ -545,195 +614,264 @@ export default function SettingsPage({ navigation }: Props) {
           </KeyboardAvoidingView>
         </View>
       )}
+
+      {/* Contact Modal */}
+      {contactModalOpen && (
+        <TouchableOpacity
+          style={styles.modal}
+          activeOpacity={1}
+          onPress={handleCloseContact}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%', maxWidth: 400 }}
+          >
+            <TouchableOpacity
+              style={styles.modalContent}
+              activeOpacity={1}
+              onPress={e => e.stopPropagation && e.stopPropagation()}
+            >
+              <Text style={styles.modalTitle}>Contact Us</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={contactName}
+                  onChangeText={setContactName}
+                  placeholder="Your name"
+                  placeholderTextColor="#A0A0A0"
+                  editable={!contactSending}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={contactEmail}
+                  onChangeText={setContactEmail}
+                  placeholder="Your email"
+                  placeholderTextColor="#A0A0A0"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!contactSending}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Message</Text>
+                <TextInput
+                  style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                  value={contactMessage}
+                  onChangeText={setContactMessage}
+                  placeholder="How can we help you?"
+                  placeholderTextColor="#A0A0A0"
+                  multiline
+                  numberOfLines={4}
+                  editable={!contactSending}
+                />
+              </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.cancelButton} onPress={handleCloseContact} disabled={contactSending}>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.saveButton, contactSending && styles.saveButtonDisabled]} onPress={handleSendContact} disabled={contactSending}>
+                  <Text style={styles.saveButtonText}>{contactSending ? 'Sending...' : 'Send'}</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-  },
-  headerChatLike: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 12,
-    minHeight: 85,
-    backgroundColor: '#232323',
-    borderBottomWidth: 1,
-    borderBottomColor: '#232323',
-  },
-  backButtonChatLike: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2D2D2D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  headerTextContainerChatLike: {
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  titleChatLike: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#F5F5F5',
-    textAlign: 'left',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  section: {
-    backgroundColor: '#2D2D2D',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#F5F5F5',
-    marginLeft: 12,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  settingInfo: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
-    marginBottom: 4,
-  },
-  settingDescription: {
-    fontSize: 14,
-    color: '#A0A0A0',
-  },
-  settingButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  settingButtonText: {
-    fontSize: 16,
-    color: '#F5F5F5',
-  },
-  modal: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#2D2D2D',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#F5F5F5',
-    marginBottom: 24,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#A0A0A0',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#1E1E1E',
-    borderWidth: 1,
-    borderColor: '#383838',
-    borderRadius: 8,
-    padding: 12,
-    color: '#F5F5F5',
-    fontSize: 16,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#383838',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#A0A0A0',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: '#D49A6A',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  modalButton: {
-    backgroundColor: '#D49A6A',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  supportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#D49A6A',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignSelf: 'center',
-    marginTop: 12,
-  },
-  supportButtonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+    },
+    headerChatLike: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 48,
+      paddingBottom: 12,
+      minHeight: 85,
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderBottomWidth: 1,
+      borderBottomColor: theme === "dark" ? '#232323' : '#E0E0E0',
+    },
+    backButtonChatLike: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    headerTextContainerChatLike: {
+      flex: 1,
+      justifyContent: 'center',
+      minWidth: 0,
+    },
+    titleChatLike: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      textAlign: 'left',
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+    },
+    section: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#F5F5F5',
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 24,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginLeft: 12,
+    },
+    settingItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    settingInfo: {
+      flex: 1,
+    },
+    settingTitle: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginBottom: 4,
+    },
+    settingDescription: {
+      fontSize: 14,
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+    },
+    settingButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      marginBottom: 8,
+    },
+    settingButtonText: {
+      fontSize: 16,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+    },
+    modal: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: theme === "dark" ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255,255,255,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    modalContent: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#F5F5F5',
+      borderRadius: 16,
+      padding: 24,
+      width: '100%',
+      maxWidth: 400,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginBottom: 24,
+    },
+    inputContainer: {
+      marginBottom: 16,
+    },
+    inputLabel: {
+      fontSize: 14,
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      marginBottom: 8,
+    },
+    input: {
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+      borderRadius: 8,
+      padding: 12,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 24,
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    cancelButtonText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    saveButton: {
+      flex: 1,
+      backgroundColor: '#D49A6A',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    saveButtonDisabled: {
+      opacity: 0.5,
+    },
+    saveButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    modalButton: {
+      backgroundColor: '#D49A6A',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    modalButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    supportButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#D49A6A',
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      alignSelf: 'center',
+      marginTop: 12,
+    },
+    supportButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+}

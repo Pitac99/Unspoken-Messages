@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft, Moon, Sun } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useTheme } from "@/context/ThemeContext"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -377,13 +378,17 @@ const SidebarFooter = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
 >(({ className, ...props }, ref) => {
+  const { theme, toggleTheme } = useTheme()
+
   return (
     <div
       ref={ref}
       data-sidebar="footer"
       className={cn("flex flex-col gap-2 p-2", className)}
       {...props}
-    />
+    >
+      <SidebarThemeToggle />
+    </div>
   )
 })
 SidebarFooter.displayName = "SidebarFooter"
@@ -742,6 +747,15 @@ const SidebarMenuSubButton = React.forwardRef<
   )
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
+
+const SidebarThemeToggle: React.FC = () => {
+  const { theme, toggleTheme } = useTheme()
+  return (
+    <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+      {theme === "dark" ? <Sun /> : <Moon />}
+    </Button>
+  )
+}
 
 export {
   Sidebar,

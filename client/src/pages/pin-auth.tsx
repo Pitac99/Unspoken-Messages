@@ -8,6 +8,7 @@ import { PinDots } from "@/components/pin-dots";
 import { auth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import * as LocalAuthentication from 'expo-local-authentication';
+import { useTheme } from "@/context/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PinAuth'>;
 
@@ -16,6 +17,8 @@ export default function PinAuthPage({ navigation }: Props) {
   const [status, setStatus] = useState("Enter PIN");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
 
   const handleNumberPress = async (number: string) => {
     if (pin.length < 4 && !isProcessing) {
@@ -156,63 +159,65 @@ export default function PinAuthPage({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-    padding: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-    paddingTop: 80,
-  },
-  logoWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#D49A6A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#F5F5F5',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subheading: {
-    color: '#A0A0A0',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  pinContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  status: {
-    marginTop: 24,
-    fontSize: 14,
-    color: '#A0A0A0',
-  },
-  processingStatus: {
-    color: '#D49A6A',
-  },
-  biometricButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: '#232323',
-  },
-  biometricText: {
-    color: '#D49A6A',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      padding: 24,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 48,
+      paddingTop: 80,
+    },
+    logoWrapper: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: '#D49A6A',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    heading: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: '#F5F5F5',
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    subheading: {
+      color: '#A0A0A0',
+      fontSize: 16,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    pinContainer: {
+      alignItems: 'center',
+      marginBottom: 48,
+    },
+    status: {
+      marginTop: 24,
+      fontSize: 14,
+      color: '#A0A0A0',
+    },
+    processingStatus: {
+      color: '#D49A6A',
+    },
+    biometricButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 8,
+      paddingVertical: 12,
+      borderRadius: 16,
+      backgroundColor: '#232323',
+    },
+    biometricText: {
+      color: '#D49A6A',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+  });
+}

@@ -3,10 +3,14 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'rea
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import logoPath from "@assets/logo_portocaliu.png";
+import { useTheme } from "@/context/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 export default function OnboardingPage({ navigation }: Props) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+
   const handleContinue = () => {
     navigation.navigate('PinSetup');
   };
@@ -74,90 +78,92 @@ export default function OnboardingPage({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-    padding: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 32,
-  },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#F5F5F5',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: '#A0A0A0',
-    fontSize: 16,
-  },
-  stepsContainer: {
-    flex: 1,
-  },
-  stepCard: {
-    backgroundColor: '#2D2D2D',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 32,
-  },
-  stepContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-  },
-  stepNumber: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#D49A6A',
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumberText: {
-    color: '#1E1E1E',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  stepTextContainer: {
-    flex: 1,
-  },
-  stepTitle: {
-    color: '#F5F5F5',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  stepDescription: {
-    color: '#A0A0A0',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  buttonContainer: {
-    paddingTop: 32,
-  },
-  button: {
-    backgroundColor: '#D49A6A',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      padding: 24,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 32,
+      paddingTop: 32,
+    },
+    logoContainer: {
+      width: 80,
+      height: 80,
+      marginBottom: 16,
+    },
+    logo: {
+      width: '100%',
+      height: '100%',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '600',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginBottom: 8,
+    },
+    subtitle: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+    },
+    stepsContainer: {
+      flex: 1,
+    },
+    stepCard: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#F5F5F5',
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 32,
+    },
+    stepContent: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 16,
+    },
+    stepNumber: {
+      width: 48,
+      height: 48,
+      backgroundColor: '#D49A6A',
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepNumberText: {
+      color: '#1E1E1E',
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    stepTextContainer: {
+      flex: 1,
+    },
+    stepTitle: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      fontWeight: '500',
+      marginBottom: 8,
+    },
+    stepDescription: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    buttonContainer: {
+      paddingTop: 32,
+    },
+    button: {
+      backgroundColor: '#D49A6A',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 16,
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+  });
+}

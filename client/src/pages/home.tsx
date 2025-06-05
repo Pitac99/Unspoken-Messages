@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { AvatarColor } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AboutUnspokenPage from "@/pages/aboutunspoken";
+import { useTheme } from "@/context/ThemeContext";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -39,6 +40,13 @@ export default function HomePage({ navigation }: Props) {
   const [newContactName, setNewContactName] = useState("");
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const [optionsContact, setOptionsContact] = useState<any>(null);
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+  const insets = useSafeAreaInsets();
+
+  // Track scrollability for gradient
+  const [contentHeight, setContentHeight] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
 
   useEffect(() => {
     if (!auth.isAuthenticated()) {
@@ -227,8 +235,20 @@ export default function HomePage({ navigation }: Props) {
   // --- Modal for renaming contact ---
   const renderRenameModal = () => (
     renameDialogOpen && (
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => {
+          setRenameDialogOpen(false);
+          setSelectedContact(null);
+          setNewContactName("");
+        }}
+      >
+        <TouchableOpacity
+          style={styles.modalContent}
+          activeOpacity={1}
+          onPress={e => e.stopPropagation && e.stopPropagation()}
+        >
           <Text style={styles.modalTitle}>Rename Contact</Text>
           <TextInput
             style={styles.modalInput}
@@ -258,16 +278,24 @@ export default function HomePage({ navigation }: Props) {
               <Text style={styles.saveButtonText}>Save</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     )
   );
 
   // --- Modal for contact options ---
   const renderOptionsModal = () => (
     optionsDialogOpen && optionsContact && (
-      <View style={styles.modalOverlay}>
-        <View style={styles.optionsModalContent}>
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={closeOptionsModal}
+      >
+        <TouchableOpacity
+          style={styles.optionsModalContent}
+          activeOpacity={1}
+          onPress={e => e.stopPropagation && e.stopPropagation()}
+        >
           <Text style={styles.modalTitle}>Contact Options</Text>
           <TouchableOpacity style={styles.optionsButton} onPress={() => { closeOptionsModal(); handleRenameContact(optionsContact); }}>
             <Ionicons name="pencil" size={18} color="#D49A6A" style={{ marginRight: 10 }} />
@@ -290,8 +318,8 @@ export default function HomePage({ navigation }: Props) {
           <TouchableOpacity style={styles.optionsCancelButton} onPress={closeOptionsModal}>
             <Text style={styles.optionsCancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     )
   );
 
@@ -305,7 +333,7 @@ export default function HomePage({ navigation }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={e => setContainerHeight(e.nativeEvent.layout.height)}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -325,7 +353,11 @@ export default function HomePage({ navigation }: Props) {
       </View>
 
       {/* Conversations List */}
-      <ScrollView style={styles.conversationsList}>
+      <ScrollView
+        style={styles.conversationsList}
+        onContentSizeChange={(w, h) => setContentHeight(h)}
+        showsVerticalScrollIndicator={false}
+      >
         {conversations.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyStateIcon}>
@@ -404,16 +436,18 @@ export default function HomePage({ navigation }: Props) {
       </ScrollView>
 
       {/* Bottom Gradient Overlay */}
-      <LinearGradient
-        colors={["transparent", "#1E1E1E"]}
-        style={styles.bottomGradient}
-        pointerEvents="none"
-      />
+      {contentHeight > containerHeight && (
+        <LinearGradient
+          colors={["transparent", "#1E1E1E"]}
+          style={styles.bottomGradient}
+          pointerEvents="none"
+        />
+      )}
 
       {/* Floating Action Button */}
       {conversations.length > 0 && (
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, { bottom: Platform.OS === 'ios' ? insets.bottom + 20 : 40 }]}
           onPress={handleNewConversation}
         >
           <Ionicons name="add" size={24} color="#1E1E1E" />
@@ -428,270 +462,271 @@ export default function HomePage({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#A0A0A0',
-    marginTop: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 5,
-    minHeight: 85,
-    backgroundColor: '#232323',
-    borderBottomWidth: 1,
-    borderBottomColor: '#232323',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 5,
-    marginRight: -2,
-  },
-  settingsButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2D2D2D',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#F5F5F5',
-    
-  },
-  conversationsList: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 10,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 48,
-  },
-  emptyStateIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#2D2D2D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#F5F5F5',
-    marginBottom: 8,
-  },
-  emptyStateDescription: {
-    color: '#A0A0A0',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  newConversationButton: {
-    backgroundColor: '#D49A6A',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  newConversationButtonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  conversationCard: {
-    backgroundColor: '#2D2D2D',
-    borderRadius: 16,
-    marginBottom: 12,
-    padding: 16,
-  },
-  conversationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  contactAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactAvatarText: {
-    color: '#F5F5F5',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  conversationInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  contactName: {
-    color: '#F5F5F5',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  lastMessageTime: {
-    color: '#A0A0A0',
-    fontSize: 14,
-  },
-  moreButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#D49A6A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  modalContent: {
-    backgroundColor: '#232323',
-    borderRadius: 20,
-    padding: 28,
-    width: '90%',
-    maxWidth: 350,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    color: '#F5F5F5',
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 20,
-  },
-  modalInput: {
-    backgroundColor: '#1E1E1E',
-    borderWidth: 1,
-    borderColor: '#383838',
-    borderRadius: 10,
-    padding: 12,
-    color: '#F5F5F5',
-    fontSize: 16,
-    width: '100%',
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#383838',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#A0A0A0',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: '#D49A6A',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  optionsModalContent: {
-    backgroundColor: '#232323',
-    borderRadius: 20,
-    padding: 24,
-    width: '90%',
-    maxWidth: 350,
-    alignItems: 'stretch',
-  },
-  optionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-    backgroundColor: '#2D2D2D',
-  },
-  optionsButtonText: {
-    color: '#F5F5F5',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  optionsDeleteButton: {
-    backgroundColor: '#2D2D2D',
-    borderWidth: 1,
-    borderColor: '#FF5A5A',
-  },
-  optionsCancelButton: {
-    marginTop: 8,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  optionsCancelButtonText: {
-    color: '#A0A0A0',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  bottomGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 48,
-    zIndex: 10,
-  },
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+    },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      marginTop: 16,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 48,
+      paddingBottom: 5,
+      minHeight: 85,
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderBottomWidth: 1,
+      borderBottomColor: theme === "dark" ? '#232323' : '#E0E0E0',
+    },
+    headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    logo: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginLeft: 5,
+      marginRight: -2,
+    },
+    settingsButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+    },
+    conversationsList: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 10,
+    },
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: 48,
+    },
+    emptyStateIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    emptyStateTitle: {
+      fontSize: 18,
+      fontWeight: '500',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginBottom: 8,
+    },
+    emptyStateDescription: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    newConversationButton: {
+      backgroundColor: '#D49A6A',
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+    },
+    newConversationButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    conversationCard: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#F5F5F5',
+      borderRadius: 16,
+      marginBottom: 12,
+      padding: 16,
+    },
+    conversationContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    contactAvatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    contactAvatarText: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 20,
+      fontWeight: '600',
+    },
+    conversationInfo: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    contactName: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      fontWeight: '500',
+      marginBottom: 4,
+    },
+    lastMessageTime: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 14,
+    },
+    moreButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    fab: {
+      position: 'absolute',
+      right: 24,
+      bottom: 0,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: '#D49A6A',
+      justifyContent: 'center',
+      alignItems: 'center',
+      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+    },
+    modalOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 100,
+    },
+    modalContent: {
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderRadius: 20,
+      padding: 28,
+      width: '90%',
+      maxWidth: 350,
+      alignItems: 'center',
+    },
+    modalTitle: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 20,
+      fontWeight: '600',
+      marginBottom: 20,
+    },
+    modalInput: {
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+      borderRadius: 10,
+      padding: 12,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      width: '100%',
+      marginBottom: 20,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      width: '100%',
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    cancelButtonText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    saveButton: {
+      flex: 1,
+      backgroundColor: '#D49A6A',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    saveButtonDisabled: {
+      opacity: 0.5,
+    },
+    saveButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    optionsModalContent: {
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderRadius: 20,
+      padding: 24,
+      width: '90%',
+      maxWidth: 350,
+      alignItems: 'stretch',
+    },
+    optionsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      marginBottom: 8,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+    },
+    optionsButtonText: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    optionsDeleteButton: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+      borderWidth: 1,
+      borderColor: '#FF5A5A',
+    },
+    optionsCancelButton: {
+      marginTop: 8,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderRadius: 10,
+    },
+    optionsCancelButtonText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    bottomGradient: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 48,
+      zIndex: 10,
+    },
+  });
+}

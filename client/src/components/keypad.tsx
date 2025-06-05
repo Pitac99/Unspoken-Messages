@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from "@/context/ThemeContext";
 
 interface KeypadProps {
   onNumberPress: (number: string) => void;
@@ -21,6 +22,8 @@ export function Keypad({
   style,
   buttonTextStyle,
 }: KeypadProps) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const numbers = [
     ["1", "2", "3"],
     ["4", "5", "6"],
@@ -93,39 +96,41 @@ export function Keypad({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    maxWidth: 300,
-    alignSelf: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    gap: 10,
-  },
-  button: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#2D2D2D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 3,
-  },
-  buttonDisabled: {
-    backgroundColor: '#1E1E1E',
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 26,
-    fontWeight: '500',
-    color: '#F5F5F5',
-  },
-  textDisabled: {
-    color: '#666666',
-  },
-  invisible: {
-    opacity: 0,
-  },
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      maxWidth: 300,
+      alignSelf: 'center',
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+      gap: 10,
+    },
+    button: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#F5F5F5',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginHorizontal: 3,
+    },
+    buttonDisabled: {
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#E0E0E0',
+      opacity: 0.5,
+    },
+    buttonText: {
+      fontSize: 26,
+      fontWeight: '500',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+    },
+    textDisabled: {
+      color: '#666666',
+    },
+    invisible: {
+      opacity: 0,
+    },
+  });
+}

@@ -7,6 +7,7 @@ import { PinDots } from "@/components/pin-dots";
 import { auth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from "@/context/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PinSetup'>;
 
@@ -18,6 +19,8 @@ export default function PinSetupPage({ navigation }: Props) {
   const [status, setStatus] = useState("Enter your PIN");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
 
   const handleNumberPress = async (number: string) => {
     if (pin.length < 4 && !isProcessing) {
@@ -139,72 +142,74 @@ export default function PinSetupPage({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-    padding: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-    paddingTop: 80,
-  },
-  logoWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#D49A6A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#F5F5F5',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subheading: {
-    color: '#A0A0A0',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  pinDisplay: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  pinDots: {
-    marginBottom: 0,
-  },
-  status: {
-    fontSize: 14,
-    color: '#A0A0A0',
-    textAlign: 'center',
-  },
-  statusSpacing: {
-    marginBottom: 24,
-  },
-  processingStatus: {
-    color: '#D49A6A',
-  },
-  keypadContainer: {
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  biometricContainer: {
-    paddingTop: 0,
-    marginBottom: 0,
-  },
-  biometricRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  biometricText: {
-    fontSize: 14,
-    color: '#A0A0A0',
-  }
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      padding: 24,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 48,
+      paddingTop: 80,
+    },
+    logoWrapper: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: '#D49A6A',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    heading: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    subheading: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    pinDisplay: {
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    pinDots: {
+      marginBottom: 0,
+    },
+    status: {
+      fontSize: 14,
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      textAlign: 'center',
+    },
+    statusSpacing: {
+      marginBottom: 24,
+    },
+    processingStatus: {
+      color: '#D49A6A',
+    },
+    keypadContainer: {
+      justifyContent: 'center',
+      marginBottom: 24,
+    },
+    biometricContainer: {
+      paddingTop: 0,
+      marginBottom: 0,
+    },
+    biometricRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+    },
+    biometricText: {
+      fontSize: 14,
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+    },
+  });
+}

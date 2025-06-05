@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Platform, StatusBar } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import 'react-native-get-random-values';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
-import * as SystemUI from 'expo-system-ui';
 import { Keyboard } from 'react-native';
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import all pages
 import IntroPage from "@/pages/intro";
@@ -30,12 +29,13 @@ import { RootStackParamList } from './types/navigation';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppNavigator() {
+  const { theme } = useTheme();
   return (
     <Stack.Navigator
       initialRouteName="Intro"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#1E1E1E' }
+        contentStyle: { backgroundColor: theme === 'dark' ? '#FFFFFF' : '#FFFFFF', paddingBottom: 0 }
       }}
     >
       <Stack.Screen name="Intro" component={IntroPage} />
@@ -51,9 +51,19 @@ function AppNavigator() {
   );
 }
 
-// Set Android navigation bar color as early as possible
-if (Platform.OS === 'android') {
-  SystemUI.setBackgroundColorAsync('#232323');
+function AppWrapper() {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+  return (
+    <View style={{
+      flex: 1,
+      backgroundColor: theme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+      borderWidth: 4,
+      borderColor: 'red',
+    }}>
+      <AppNavigator />
+    </View>
+  );
 }
 
 function App() {
@@ -91,25 +101,18 @@ function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <SafeAreaView
-            style={{
-              flex: 1,
-              backgroundColor: '#1E1E1E',
-              paddingBottom:
-                Platform.OS === 'android'
-                  ? (keyboardVisible ? 0 : 25)
-                  : 25,
-            }}
-            edges={['bottom', 'left', 'right']}
-          >
-            <AppNavigator />
-          </SafeAreaView>
-        </NavigationContainer>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <NavigationContainer>
+              <AppWrapper />
+            </NavigationContainer>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </>
   );
 }
 

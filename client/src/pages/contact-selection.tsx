@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppData } from '@/hooks/use-storage';
 import { useToast } from '@/hooks/use-toast';
 import * as Contacts from 'expo-contacts';
+import { useTheme } from "@/context/ThemeContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ContactSelection'>;
 
@@ -17,6 +18,8 @@ export default function ContactSelectionPage({ navigation }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const { data, addContact } = useAppData();
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
 
   const handleBack = () => {
     navigation.navigate('Home');
@@ -217,141 +220,165 @@ export default function ContactSelectionPage({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1E1E1E' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 12,
-    minHeight: 85,
-    backgroundColor: '#232323',
-    borderBottomWidth: 1,
-    borderBottomColor: '#232323',
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2D2D2D',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#F5F5F5',
-  },
-  content: { flex: 1, paddingHorizontal: 24 },
-  centeredOptionsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 24,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#F5F5F5',
-    marginBottom: 16,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    minHeight: 56,
-    justifyContent: 'center',
-  },
-  phoneButton: {
-    backgroundColor: '#2D2D2D',
-    borderWidth: 1,
-    borderColor: '#383838',
-  },
-  createButton: {
-    backgroundColor: '#D49A6A',
-  },
-  buttonText: { fontSize: 18, color: '#F5F5F5', fontWeight: '500', textAlign: 'center' },
-  createButtonText: {
-    fontSize: 18,
-    color: '#1E1E1E',
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  formContainer: {
-    backgroundColor: '#2D2D2D',
-    borderRadius: 16,
-    padding: 16,
-  },
-  formHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  formTitle: { fontSize: 16, fontWeight: '500', color: '#F5F5F5' },
-  cancelButton: { padding: 8 },
-  cancelButtonText: { fontSize: 14, color: '#A0A0A0' },
-  input: {
-    backgroundColor: '#1E1E1E',
-    borderWidth: 1,
-    borderColor: '#383838',
-    borderRadius: 12,
-    padding: 12,
-    color: '#F5F5F5',
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  createContactButton: {
-    backgroundColor: '#D49A6A',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-  },
-  createContactButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1E1E1E',
-  },
-  contactsList: { maxHeight: 300 },
-  emptyText: {
-    textAlign: 'center',
-    color: '#A0A0A0',
-    padding: 16,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    gap: 12,
-  },
-  contactAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#383838',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactInitial: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#F5F5F5',
-  },
-  contactName: { fontSize: 16, color: '#F5F5F5' },
-  searchInput: {
-    backgroundColor: '#232323',
-    borderRadius: 12,
-    padding: 12,
-    color: '#F5F5F5',
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#383838',
-  },
-});
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 48,
+      paddingBottom: 12,
+      minHeight: 85,
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderBottomWidth: 1,
+      borderBottomColor: theme === "dark" ? '#232323' : '#E0E0E0',
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      textAlign: 'left',
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      marginBottom: 24,
+      textAlign: 'center',
+    },
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#D49A6A',
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      marginBottom: 12,
+    },
+    phoneButton: {
+      backgroundColor: theme === "dark" ? '#D49A6A' : '#FFC785',
+    },
+    createButton: {
+      backgroundColor: theme === "dark" ? '#F5F5F5' : '#232323',
+    },
+    buttonText: {
+      color: theme === "dark" ? '#1E1E1E' : '#232323',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    createButtonText: {
+      color: theme === "dark" ? '#232323' : '#F5F5F5',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    centeredOptionsContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 1,
+    },
+    formContainer: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#F5F5F5',
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 24,
+    },
+    formHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    formTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+    },
+    cancelButton: {
+      padding: 8,
+    },
+    cancelButtonText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+    },
+    input: {
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+      borderRadius: 8,
+      padding: 12,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      marginBottom: 16,
+    },
+    createContactButton: {
+      backgroundColor: '#D49A6A',
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    createContactButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    searchInput: {
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+      borderRadius: 8,
+      padding: 12,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      marginBottom: 16,
+    },
+    contactsList: {
+      maxHeight: 300,
+    },
+    contactItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: theme === "dark" ? '#383838' : '#E0E0E0',
+    },
+    emptyText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      textAlign: 'center',
+      marginTop: 24,
+    },
+    backButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: '#2D2D2D',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    contactAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#383838',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    contactInitial: {
+      fontSize: 18,
+      fontWeight: '500',
+      color: '#F5F5F5',
+    },
+    contactName: { fontSize: 16, color: theme === "dark" ? '#F5F5F5' : '#232323', marginLeft: 10,},
+  });
+}

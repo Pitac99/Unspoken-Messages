@@ -10,7 +10,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Image
+  Image,
+  Keyboard
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
@@ -25,8 +26,183 @@ import { auth } from "@/lib/auth";
 import type { AvatarColor } from "@/types";
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from "@/context/ThemeContext";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
+
+function getStyles(theme: "light" | "dark") {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF' },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 48,
+      paddingBottom: 12,
+      minHeight: 85,
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderBottomWidth: 1,
+      borderBottomColor: theme === "dark" ? '#232323' : '#E0E0E0',
+    },
+    backButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    headerAvatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: '#D49A6A',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    headerAvatarText: {
+      color: '#1E1E1E',
+      fontSize: 22,
+      fontWeight: '700',
+    },
+    headerTextContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      minWidth: 0,
+    },
+    headerSubtitle: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 13,
+      marginTop: 2,
+    },
+    contactName: { fontSize: 18, fontWeight: '600', color: theme === "dark" ? '#F5F5F5' : '#232323' },
+    messagesContainer: { flex: 1 },
+    messagesContent: { padding: 16 },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      paddingHorizontal: 16,
+      paddingBottom: 0,
+      paddingTop: 5,
+      
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      marginTop: 8,
+    },
+    input: {
+      flex: 1,
+      minHeight: 56,
+      maxHeight: 140,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#FFFFFF',
+      borderRadius: 10,
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      marginRight: 12,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 17,
+      borderWidth: 1,
+      borderColor: theme === "dark" ? '#383838' : '#E0E0E0',
+    },
+    sendButton: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: '#D49A6A',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sendButtonDisabled: { opacity: 0.5 },
+    unlockDialog: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    unlockTitle: { fontSize: 20, fontWeight: '600', color: theme === "dark" ? '#F5F5F5' : '#232323', marginBottom: 24 },
+    headerMoreButton: {
+      padding: 8,
+      marginLeft: 16,
+    },
+    optionsModalContent: {
+      backgroundColor: theme === "dark" ? '#232323' : '#F5F5F5',
+      borderRadius: 20,
+      padding: 24,
+      width: '90%',
+      maxWidth: 350,
+      alignItems: 'stretch',
+    },
+    optionsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      marginBottom: 8,
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#E0E0E0',
+    },
+    optionsButtonText: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    optionsCancelButton: {
+      marginTop: 8,
+      backgroundColor: 'transparent',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderRadius: 10,
+    },
+    optionsCancelButtonText: {
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    modalOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginBottom: 24,
+    },
+    saveButton: {
+      backgroundColor: '#D49A6A',
+      paddingVertical: 12,
+      marginTop: 8,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    saveButtonDisabled: { opacity: 0.5 },
+    saveButtonText: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    unlockButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#D49A6A',
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      marginTop: 24,
+    },
+    unlockButtonText: {
+      color: '#1E1E1E',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+}
 
 export default function ChatPage({ navigation, route }: Props) {
   const { contactId } = route.params;
@@ -42,6 +218,9 @@ export default function ChatPage({ navigation, route }: Props) {
 
   const { data, addMessage, editMessage, getContactMessages, updateData, shouldShowDonationModal, markDonationPromptShown, reloadData, deleteMessage } = useAppData();
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!auth.isAuthenticated()) {
@@ -106,7 +285,10 @@ export default function ChatPage({ navigation, route }: Props) {
   };
 
   // Modal state for options
-  const openOptionsModal = () => setOptionsDialogOpen(true);
+  const openOptionsModal = () => {
+    Keyboard.dismiss();
+    setOptionsDialogOpen(true);
+  };
   const closeOptionsModal = () => setOptionsDialogOpen(false);
 
   // Delete all messages for this contact
@@ -235,12 +417,23 @@ export default function ChatPage({ navigation, route }: Props) {
   // --- Modal for renaming contact ---
   const renderRenameModal = () => (
     renameDialogOpen && (
-      <View style={styles.modalOverlay}>
-        <View style={styles.optionsModalContent}>
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => {
+          setRenameDialogOpen(false);
+          setNewContactName("");
+        }}
+      >
+        <TouchableOpacity
+          style={styles.optionsModalContent}
+          activeOpacity={1}
+          onPress={e => e.stopPropagation && e.stopPropagation()}
+        >
           <Text style={styles.modalTitle}>Rename Contact</Text>
           <TextInput
             style={styles.input}
-            value={newContactName}
+            value={newContactName || (contact?.name ?? '')}
             onChangeText={setNewContactName}
             maxLength={32}
             placeholder="Enter new name"
@@ -249,7 +442,7 @@ export default function ChatPage({ navigation, route }: Props) {
           />
           <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
             <TouchableOpacity
-              style={[styles.optionsCancelButton, { flex: 1, borderWidth: 1, borderColor: '#383838' }]}
+              style={[styles.optionsCancelButton, { flex: 1, borderWidth: 1, borderColor: '#383838', alignItems: 'center', justifyContent: 'center' }]}
               onPress={() => {
                 setRenameDialogOpen(false);
                 setNewContactName("");
@@ -258,7 +451,7 @@ export default function ChatPage({ navigation, route }: Props) {
               <Text style={styles.optionsCancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.saveButton, (!newContactName.trim()) && styles.saveButtonDisabled, { flex: 1 }]}
+              style={[styles.saveButton, (!newContactName.trim()) && styles.saveButtonDisabled, { flex: 1, alignItems: 'center', justifyContent: 'center' }]}
               onPress={() => {
                 if (!contact || !newContactName.trim()) return;
                 updateData(data => ({
@@ -281,16 +474,24 @@ export default function ChatPage({ navigation, route }: Props) {
               <Text style={styles.saveButtonText}>Save</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     )
   );
 
   // --- Modal for options ---
   const renderOptionsModal = () => (
     optionsDialogOpen && (
-      <View style={styles.modalOverlay}>
-        <View style={styles.optionsModalContent}>
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={closeOptionsModal}
+      >
+        <TouchableOpacity
+          style={styles.optionsModalContent}
+          activeOpacity={1}
+          onPress={e => e.stopPropagation && e.stopPropagation()}
+        >
           <Text style={styles.modalTitle}>Conversation Options</Text>
           <TouchableOpacity style={styles.optionsButton} onPress={handleDeleteAllMessages}>
             <Ionicons name="trash" size={18} color="#FF5A5A" style={{ marginRight: 10 }} />
@@ -317,8 +518,8 @@ export default function ChatPage({ navigation, route }: Props) {
           <TouchableOpacity style={styles.optionsCancelButton} onPress={closeOptionsModal}>
             <Text style={styles.optionsCancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     )
   );
 
@@ -442,8 +643,8 @@ export default function ChatPage({ navigation, route }: Props) {
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#D49A6A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ color: '#1E1E1E', fontSize: 24 }}>{displayContact.avatar}</Text>
             </View>
-            <Text style={{ fontSize: 18, color: '#F5F5F5', marginBottom: 8 }}>Start your conversation with {displayContact.name}</Text>
-            <Text style={{ color: '#A0A0A0', fontSize: 14 }}>This is a safe space to express your thoughts and feelings.</Text>
+            <Text style={{ fontSize: 18, color: theme === 'dark' ? '#F5F5F5' : '#1E1E1E', marginBottom: 8, textAlign: 'center' }}>Start your conversation with {"\n"} {displayContact.name}</Text>
+            <Text style={{ color: '#A0A0A0', fontSize: 14, textAlign: 'center' }}>This is a safe space to express your thoughts and feelings.</Text>
           </View>
         ) : (
           messages.map((msg) => (
@@ -461,7 +662,8 @@ export default function ChatPage({ navigation, route }: Props) {
 
       {!isClosed && (
         <>
-          <View style={styles.inputContainer}>
+          <View style={{ height: 1, backgroundColor: theme === 'dark' ? '#383838' : '#E0E0E0', width: '100%' }} />
+          <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
             <TextInput
               ref={inputRef}
               style={styles.input}
@@ -506,7 +708,7 @@ export default function ChatPage({ navigation, route }: Props) {
               </TouchableOpacity>
             )}
           </View>
-          <View style={{ height: 25, backgroundColor: '#232323' }} />
+          
         </>
       )}
 
@@ -539,173 +741,3 @@ export default function ChatPage({ navigation, route }: Props) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1E1E1E' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 12,
-    minHeight: 85,
-    backgroundColor: '#232323',
-    borderBottomWidth: 1,
-    borderBottomColor: '#232323',
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#2D2D2D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  headerAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#D49A6A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  headerAvatarText: {
-    color: '#1E1E1E',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  headerTextContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  headerSubtitle: {
-    color: '#A0A0A0',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  contactName: { fontSize: 18, fontWeight: '600', color: '#F5F5F5' },
-  messagesContainer: { flex: 1 },
-  messagesContent: { padding: 16 },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingBottom: 0,
-    paddingTop: 24,
-    backgroundColor: '#232323',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: 8,
-  },
-  input: {
-    flex: 1,
-    minHeight: 56,
-    maxHeight: 140,
-    backgroundColor: '#2D2D2D',
-    borderRadius: 10,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    marginRight: 12,
-    color: '#F5F5F5',
-    fontSize: 17,
-    borderWidth: 1,
-    borderColor: '#383838',
-  },
-  sendButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#D49A6A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: { opacity: 0.5 },
-  unlockDialog: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1E1E1E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  unlockTitle: { fontSize: 20, fontWeight: '600', color: '#F5F5F5', marginBottom: 24 },
-  headerMoreButton: {
-    padding: 8,
-    marginLeft: 16,
-  },
-  optionsModalContent: {
-    backgroundColor: '#232323',
-    borderRadius: 20,
-    padding: 24,
-    width: '90%',
-    maxWidth: 350,
-    alignItems: 'stretch',
-  },
-  optionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-    backgroundColor: '#2D2D2D',
-  },
-  optionsButtonText: {
-    color: '#F5F5F5',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  optionsCancelButton: {
-    marginTop: 8,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  optionsCancelButtonText: {
-    color: '#A0A0A0',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#F5F5F5',
-    marginBottom: 24,
-  },
-  saveButton: {
-    backgroundColor: '#D49A6A',
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: { opacity: 0.5 },
-  saveButtonText: {
-    color: '#F5F5F5',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  unlockButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#D49A6A',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: 24,
-  },
-  unlockButtonText: {
-    color: '#1E1E1E',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
