@@ -69,7 +69,6 @@ export async function encrypt(data: string): Promise<string> {
     // Convert to base64 for storage
     return encodeBase64(Array.from(combined).map(byte => String.fromCharCode(byte)).join(''));
   } catch (error) {
-    console.error("Encryption failed:", error);
     throw new Error("Failed to encrypt data");
   }
 }
@@ -101,7 +100,6 @@ export async function decrypt(encryptedData: string): Promise<string> {
     // Convert bytes back to string using TextDecoder
     return uint8ArrayToString(decrypted);
   } catch (error) {
-    console.error("Decryption failed:", error);
     throw new Error("Failed to decrypt data");
   }
 }
@@ -136,7 +134,6 @@ export async function verifyPinHash(pin: string, storedHash: string): Promise<bo
 
     return hash === storedHashValue;
   } catch (error) {
-    console.error("PIN verification error:", error);
     return false;
   }
 }

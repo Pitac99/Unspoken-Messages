@@ -44,13 +44,13 @@ enableScreens();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 
-function AppNavigator() {
+function AppNavigator({ initialRoute }: { initialRoute: keyof RootStackParamList }) {
   return (
     <Stack.Navigator
-      initialRouteName="Intro"
+      initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#FFFFFF' }
+        contentStyle: { backgroundColor: '#FFFFFF' },
       }}
     >
       <Stack.Screen name="Intro" component={IntroPage} />
@@ -62,6 +62,7 @@ function AppNavigator() {
       <Stack.Screen name="Chat" component={ChatPage} />
       <Stack.Screen name="Settings" component={SettingsPage} />
       <Stack.Screen name="Terms" component={TermsPage} />
+      <Stack.Screen name="NotFound" component={NotFound} />
     </Stack.Navigator>
   );
 }
@@ -70,8 +71,9 @@ if (Platform.OS === 'android') {
   SystemUI.setBackgroundColorAsync('#232323');
 }
 
-function AppWithTheme() {
+function AppWithTheme({ initialRoute }: { initialRoute: keyof RootStackParamList }) {
   const { theme } = useTheme();
+
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
@@ -83,7 +85,7 @@ function AppWithTheme() {
             }}
             edges={['left', 'right']}
           >
-            <AppNavigator />
+            <AppNavigator initialRoute={initialRoute} />
           </SafeAreaView>
         </NavigationContainer>
       </QueryClientProvider>
@@ -102,46 +104,35 @@ function App() {
       try {
         const logoAsset = Asset.fromModule(require('./assets/logo_portocaliu.png'));
         await logoAsset.downloadAsync();
-
-        // 0. Verifică dacă termenii au fost acceptați
+  
+        let initial = 'PinAuth'; // default fallback
+  
         if (!(await storage.areTermsAccepted())) {
-          console.log('[DEBUG] App.tsx: termeni neacceptați, merg la Terms');
-          setInitialRoute('Terms');
+          initial = 'Intro'; // sau 'Terms'
         } else {
           const data = await storage.getAppData();
-          console.log('[DEBUG] App.tsx: getAppData la pornire', data);
-
-          // 1. Show onboarding/terms if not completed
+  
           if (!data?.settings?.onboardingCompleted) {
-            console.log('[DEBUG] App.tsx: onboarding nu e completat, merg la Onboarding');
-            setInitialRoute('Onboarding');
-          }
-          // 2. Show PIN setup if no PIN
-          else if (!data?.settings?.pinHash) {
-            console.log('[DEBUG] App.tsx: pinHash lipsă, merg la PinSetup');
-            setInitialRoute('PinSetup');
-          }
-          // 3. Show PIN auth if not authenticated
-          else if (!(await auth.isAuthenticated())) {
-            console.log('[DEBUG] App.tsx: sesiune inexistentă sau expirată, merg la PinAuth');
-            setInitialRoute('PinAuth');
-          }
-          // 4. Otherwise, go to Home
-          else {
-            console.log('[DEBUG] App.tsx: totul ok, merg la Home');
-            setInitialRoute('Home');
+            initial = 'Onboarding';
+          } else if (!data?.settings?.pinHash) {
+            initial = 'PinSetup';
+          } else {
+            await auth.clearAuthSession();
+            initial = 'PinAuth';
           }
         }
-
+  
+        setInitialRoute(initial);
         await SplashScreen.hideAsync();
         setIsReady(true);
       } catch (e) {
         setError(e instanceof Error ? e : new Error('Failed to load assets'));
       }
     }
-
+  
     prepare();
   }, []);
+  
 
   useEffect(() => {
     const init = async () => {
@@ -191,8 +182,8 @@ function App() {
       </View>
     )}>
       <ThemeProvider>
-        <AppWithTheme />
-      </ThemeProvider>
+  <AppWithTheme initialRoute={initialRoute as keyof RootStackParamList} />
+</ThemeProvider>
     </Sentry.ErrorBoundary>
   );
 }

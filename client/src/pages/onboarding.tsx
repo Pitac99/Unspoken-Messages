@@ -23,7 +23,7 @@ export default function OnboardingPage({ navigation }: Props) {
     },
     {
       title: "Write It Anyway",
-      description: "Angry at your boss? Missing someone who’s gone? Here, you can “send” those messages without actually sending them — and finally let them out.",
+      description: `Angry at your boss? Missing someone who's gone? Here, you can "send" those messages without actually sending them — and finally let them out.`,
       delay: "0.1s"
     },
     {
@@ -45,7 +45,7 @@ export default function OnboardingPage({ navigation }: Props) {
           />
         </View>
         <Text style={styles.title}>Welcome to Unspoken</Text>
-        <Text style={styles.subtitle}>Let’s show you how it works — this space is just for you</Text>
+        <Text style={styles.subtitle}>Let's show you how it works — this space is just for you</Text>
       </View>
 
       {/* Onboarding Steps */}

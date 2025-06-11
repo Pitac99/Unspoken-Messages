@@ -4,6 +4,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { Asset } from 'expo-asset';
 import { useTheme } from "@/context/ThemeContext";
+import { storage } from '@/lib/storage'; // sau calea relativă corectă
+
 
 // Pre-load the asset
 const logoAsset = Asset.fromModule(require('../../../assets/logo_portocaliu.png'));
@@ -23,7 +25,8 @@ export default function IntroPage({ navigation }: Props) {
     });
   }, []);
 
-  const handleAcceptTerms = () => {
+  const handleAcceptTerms = async () => {
+    await storage.setTermsAccepted();
     navigation.navigate('Onboarding');
   };
 

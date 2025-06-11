@@ -16,7 +16,8 @@ export default function TermsPage({ navigation, route }: Props) {
   const { theme } = useTheme();
   const { toast } = useToast();
   const styles = getStyles(theme);
-  const { fromSettings } = route.params;
+  const fromSettings = route.params?.fromSettings ?? false;
+
   
   // Add PIN modal state
   const [pinModalVisible, setPinModalVisible] = useState(false);
@@ -37,14 +38,17 @@ export default function TermsPage({ navigation, route }: Props) {
   const handlePinSubmit = async () => {
     setIsProcessing(true);
     setPinError("");
-    
+  
     try {
       const isValid = await auth.authenticate(pinInput);
       if (isValid) {
         setPinModalVisible(false);
-        updateSettings({ onboardingCompleted: false });
-        auth.logout();
-        navigation.replace('Intro');
+  
+        // ✅ Resetam doar setarile, pastram restul datelor intacte
+        await storage.setTermsAccepted(false);
+        await storage.resetAppSettings(); // inlocuieste updateSettings + logout
+  
+        navigation.replace("Intro");
       } else {
         setPinError("Incorrect PIN. Please try again.");
       }
@@ -54,6 +58,7 @@ export default function TermsPage({ navigation, route }: Props) {
       setIsProcessing(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>

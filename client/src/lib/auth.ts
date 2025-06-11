@@ -12,24 +12,22 @@ export class AuthManager {
     }
     return AuthManager.instance;
   }
-
+  async clearAuthSession(): Promise<void> {
+    await storage.removeItem(STORAGE_KEYS.AUTH_SESSION);
+  }
   async isAuthenticated(): Promise<boolean> {
     const session = await storage.getItem(STORAGE_KEYS.AUTH_SESSION);
-    console.log('[DEBUG] isAuthenticated: sesiune citită', session);
     if (!session) return false;
     
     try {
       const sessionData = JSON.parse(session);
       const now = Date.now();
       if (now > sessionData.expiry) {
-        console.log('[DEBUG] isAuthenticated: sesiunea a expirat');
         await storage.removeItem(STORAGE_KEYS.AUTH_SESSION);
         return false;
       }
-      console.log('[DEBUG] isAuthenticated: sesiunea este validă');
       return true;
     } catch (error) {
-      console.error('[DEBUG] isAuthenticated: Error parsing session:', error);
       return false;
     }
   }
@@ -49,23 +47,19 @@ export class AuthManager {
   async authenticate(pin: string): Promise<boolean> {
     try {
       const appData = await storage.getAppData();
-      console.log('[DEBUG] authenticate: appData', appData);
       if (!appData?.settings.pinHash) {
         throw new Error("PIN not set up");
       }
 
       const isValid = await this.verifyPinHash(pin, appData.settings.pinHash);
-      console.log('[DEBUG] authenticate: pin valid?', isValid);
       
       if (isValid) {
         const expiry = Date.now() + this.sessionDuration;
         await storage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify({ expiry }));
-        console.log('[DEBUG] authenticate: sesiune setată cu expiry', expiry);
       }
 
       return isValid;
     } catch (error) {
-      console.error('[DEBUG] authenticate: Authentication error:', error);
       return false;
     }
   }
@@ -73,7 +67,6 @@ export class AuthManager {
   async setPin(pin: string): Promise<void> {
     try {
       let appData = await storage.getAppData();
-      console.log('[DEBUG] setPin: appData inițial', appData);
       
       // Initialize with default data if not exists
       if (!appData) {
@@ -95,23 +88,19 @@ export class AuthManager {
         
         await storage.setAppData(defaultData);
         appData = defaultData;
-        console.log('[DEBUG] setPin: defaultData creat și salvat');
       }
 
       // Set the PIN hash
       appData.settings.pinHash = await this.hashPin(pin);
       appData.settings.onboardingCompleted = true;
       await storage.setAppData(appData);
-      console.log('[DEBUG] setPin: pinHash și onboardingCompleted setate', appData);
 
       // Verify the data was saved correctly
       const verifyData = await storage.getAppData();
       if (!verifyData?.settings.pinHash) {
         throw new Error("Failed to verify PIN setup");
       }
-      console.log('[DEBUG] setPin: verificare după salvare', verifyData);
     } catch (error) {
-      console.error('[DEBUG] setPin: Error in setPin:', error);
       throw new Error("Failed to set PIN: " + (error instanceof Error ? error.message : "Unknown error"));
     }
   }
@@ -132,7 +121,6 @@ export class AuthManager {
       await storage.setAppData(appData);
       return true;
     } catch (error) {
-      console.error("Change PIN error:", error);
       return false;
     }
   }
@@ -159,7 +147,6 @@ export class AuthManager {
       // Combine salt and hash
       return btoa(saltBase64) + ':' + hash;
     } catch (error) {
-      console.error("Error in hashPin:", error);
       throw error;
     }
   }
@@ -178,7 +165,6 @@ export class AuthManager {
 
       return hash === storedHashValue;
     } catch (error) {
-      console.error("PIN verification error:", error);
       return false;
     }
   }

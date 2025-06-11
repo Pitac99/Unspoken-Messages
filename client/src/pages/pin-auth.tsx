@@ -60,7 +60,6 @@ export default function PinAuthPage({ navigation }: Props) {
         });
       }
     } catch (error) {
-      console.error("Authentication error:", error);
       setStatus("Authentication error");
       setPin("");
       toast({
@@ -99,7 +98,6 @@ export default function PinAuthPage({ navigation }: Props) {
         throw new Error('Authentication failed');
       }
     } catch (error) {
-      console.error("Biometric error:", error);
       setStatus("Biometric authentication failed");
       toast({
         title: "Biometric Failed",

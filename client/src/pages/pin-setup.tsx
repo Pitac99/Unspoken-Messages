@@ -49,7 +49,6 @@ export default function PinSetupPage({ navigation }: Props) {
               });
               setTimeout(() => navigation.navigate('PinAuth'), 1000);
             } catch (error) {
-              console.error('Error setting PIN:', error);
               setStatus("Failed to save PIN. Try again.");
               toast({
                 title: "Error",

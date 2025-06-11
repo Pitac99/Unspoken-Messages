@@ -10,4 +10,5 @@ export type RootStackParamList = {
   Terms: { fromSettings: boolean };
   About: undefined;
   aboutunspoken: undefined;
+  NotFound: undefined;
 }; 

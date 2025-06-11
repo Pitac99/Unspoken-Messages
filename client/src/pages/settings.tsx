@@ -15,7 +15,6 @@ import { useTheme } from "@/context/ThemeContext";
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export default function SettingsPage({ navigation }: Props) {
-  console.log("SettingsPage rendered");
   const { data, updateSettings, resetDonationCounter, clearAllData } = useAppData();
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();

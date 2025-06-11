@@ -17,7 +17,7 @@
                  "ios":  {
                              "supportsTablet":  true,
                              "bundleIdentifier":  "com.unspokenmessages.app",
-                             "buildNumber":  "9",
+                             "buildNumber":  "12",
                              "infoPlist":  {
                                                "NSContactsUsageDescription":  "Unspoken needs access to contacts to help you select people to write messages to.",
                                                "NSFaceIDUsageDescription":  "Allow Unspoken to use Face ID to protect your private messages.",

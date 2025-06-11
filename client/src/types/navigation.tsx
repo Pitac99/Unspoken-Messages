@@ -8,4 +8,5 @@ export type RootStackParamList = {
   Settings: undefined;
   Terms: { fromSettings?: boolean };
   About: undefined;
+  NotFound: undefined;
 }; 
