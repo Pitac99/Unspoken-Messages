@@ -81,6 +81,9 @@ class StorageManager {
   }
 
   async setItem(key: string, value: string): Promise<void> {
+    if (key === STORAGE_KEYS.AUTH_SESSION) {
+      console.log('[DEBUG] setItem: setez AUTH_SESSION', value);
+    }
     try {
       // Validează JSON dacă valoarea începe cu { sau [
       if (value.startsWith('{') || value.startsWith('[')) {
@@ -105,6 +108,9 @@ class StorageManager {
   }
 
   async removeItem(key: string): Promise<void> {
+    if (key === STORAGE_KEYS.AUTH_SESSION) {
+      console.log('[DEBUG] removeItem: șterg AUTH_SESSION');
+    }
     try {
       await AsyncStorage.removeItem(key);
     } catch (error) {
@@ -115,19 +121,22 @@ class StorageManager {
 
   async getAppData(): Promise<AppData | null> {
     try {
+      console.log('[DEBUG] getAppData: încerc să citesc datele principale');
       // Încearcă să citească datele principale
       const data = await this.getItem(STORAGE_KEYS.APP_DATA);
       if (data) {
+        console.log('[DEBUG] getAppData: date principale găsite', data);
         const parsedData = reviveAppDataDates(JSON.parse(data));
         if (parsedData) return parsedData;
       }
 
       // Dacă datele principale nu există sau sunt corupte, încearcă backup-ul
-      console.log("Main data not found or corrupted, trying backup...");
+      console.log('[DEBUG] getAppData: Main data not found or corrupted, trying backup...');
       const backupData = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA_BACKUP);
       if (backupData) {
         try {
           const decryptedBackup = await decrypt(backupData);
+          console.log('[DEBUG] getAppData: backup decriptat', decryptedBackup);
           const parsedBackup = reviveAppDataDates(JSON.parse(decryptedBackup));
           if (parsedBackup) {
             // Restaurează backup-ul în storage-ul principal
@@ -135,15 +144,15 @@ class StorageManager {
             return parsedBackup;
           }
         } catch (error) {
-          console.error("Failed to restore from backup:", error);
+          console.error('[DEBUG] getAppData: Failed to restore from backup:', error);
         }
       }
 
       // Dacă nici backup-ul nu funcționează, returnează null
-      console.warn("⚠️ No valid data found. Starting fresh.");
+      console.warn('[DEBUG] getAppData: ⚠️ No valid data found. Starting fresh.');
       return null;
     } catch (error) {
-      console.error("Error in getAppData:", error);
+      console.error('[DEBUG] getAppData: Error in getAppData:', error);
       return null;
     }
   }
@@ -151,16 +160,16 @@ class StorageManager {
   async setAppData(data: AppData): Promise<void> {
     try {
       const jsonData = JSON.stringify(data);
+      console.log('[DEBUG] setAppData: salvez datele', jsonData);
       await this.setItem(STORAGE_KEYS.APP_DATA, jsonData);
-      
       // Salvează și în SecureStore ca backup adițional
       try {
         await SecureStore.setItemAsync(STORAGE_KEYS.APP_DATA, jsonData);
       } catch (secureError) {
-        console.warn("Failed to save backup to SecureStore:", secureError);
+        console.warn('[DEBUG] setAppData: Failed to save backup to SecureStore:', secureError);
       }
     } catch (error) {
-      console.error("Error setting app data:", error);
+      console.error('[DEBUG] setAppData: Error setting app data:', error);
       throw error;
     }
   }

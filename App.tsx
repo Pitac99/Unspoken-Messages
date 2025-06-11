@@ -103,23 +103,34 @@ function App() {
         const logoAsset = Asset.fromModule(require('./assets/logo_portocaliu.png'));
         await logoAsset.downloadAsync();
 
-        const data = await storage.getAppData();
+        // 0. Verifică dacă termenii au fost acceptați
+        if (!(await storage.areTermsAccepted())) {
+          console.log('[DEBUG] App.tsx: termeni neacceptați, merg la Terms');
+          setInitialRoute('Terms');
+        } else {
+          const data = await storage.getAppData();
+          console.log('[DEBUG] App.tsx: getAppData la pornire', data);
 
-        // 1. Show onboarding/terms if not completed
-        if (!data?.settings?.onboardingCompleted) {
-          setInitialRoute('Onboarding');
-        }
-        // 2. Show PIN setup if no PIN
-        else if (!data?.settings?.pinHash) {
-          setInitialRoute('PinSetup');
-        }
-        // 3. Show PIN auth if not authenticated
-        else if (!(await auth.isAuthenticated())) {
-          setInitialRoute('PinAuth');
-        }
-        // 4. Otherwise, go to Home
-        else {
-          setInitialRoute('Home');
+          // 1. Show onboarding/terms if not completed
+          if (!data?.settings?.onboardingCompleted) {
+            console.log('[DEBUG] App.tsx: onboarding nu e completat, merg la Onboarding');
+            setInitialRoute('Onboarding');
+          }
+          // 2. Show PIN setup if no PIN
+          else if (!data?.settings?.pinHash) {
+            console.log('[DEBUG] App.tsx: pinHash lipsă, merg la PinSetup');
+            setInitialRoute('PinSetup');
+          }
+          // 3. Show PIN auth if not authenticated
+          else if (!(await auth.isAuthenticated())) {
+            console.log('[DEBUG] App.tsx: sesiune inexistentă sau expirată, merg la PinAuth');
+            setInitialRoute('PinAuth');
+          }
+          // 4. Otherwise, go to Home
+          else {
+            console.log('[DEBUG] App.tsx: totul ok, merg la Home');
+            setInitialRoute('Home');
+          }
         }
 
         await SplashScreen.hideAsync();

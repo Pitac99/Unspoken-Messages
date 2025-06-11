@@ -19,7 +19,9 @@ async function getEncryptionKey(): Promise<string> {
     ENCRYPTION_KEY = await SecureStore.getItemAsync(ENCRYPTION_KEY_STORAGE);
     if (!ENCRYPTION_KEY) {
       ENCRYPTION_KEY = await generateKey();
-      await SecureStore.setItemAsync(ENCRYPTION_KEY_STORAGE, ENCRYPTION_KEY);
+      await SecureStore.setItemAsync(ENCRYPTION_KEY_STORAGE, ENCRYPTION_KEY, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY
+      });
     }
   }
   return ENCRYPTION_KEY;

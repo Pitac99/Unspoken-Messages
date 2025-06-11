@@ -7,6 +7,7 @@ import { useAppData } from '@/hooks/use-storage';
 import { auth } from '@/lib/auth';
 import { useTheme } from "@/context/ThemeContext";
 import { useToast } from '@/hooks/use-toast';
+import { storage } from '@/lib/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Terms'>;
 
@@ -189,6 +190,29 @@ export default function TermsPage({ navigation, route }: Props) {
           )}
         </View>
       </ScrollView>
+
+      {/* Accept Terms Button */}
+      {!fromSettings && (
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#D49A6A',
+            borderRadius: 12,
+            paddingVertical: 16,
+            paddingHorizontal: 24,
+            alignSelf: 'center',
+            marginTop: 24,
+            marginBottom: 16,
+          }}
+          onPress={async () => {
+            await storage.setTermsAccepted();
+            navigation.replace('Onboarding');
+          }}
+        >
+          <Text style={{ color: '#1E1E1E', fontSize: 16, fontWeight: '600' }}>
+            Accept Terms & Continue
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* PIN Modal */}
       {pinModalVisible && (
