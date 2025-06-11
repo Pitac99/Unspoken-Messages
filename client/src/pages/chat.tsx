@@ -667,8 +667,8 @@ export default function ChatPage({ navigation, route }: Props) {
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#D49A6A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ color: '#1E1E1E', fontSize: 24 }}>{displayContact.avatar}</Text>
             </View>
-            <Text style={{ fontSize: 18, color: theme === 'dark' ? '#F5F5F5' : '#1E1E1E', marginBottom: 8, textAlign: 'center' }}>Start your conversation with {"\n"} {displayContact.name}</Text>
-            <Text style={{ color: '#A0A0A0', fontSize: 14, textAlign: 'center' }}>This is a safe space to express your thoughts and feelings.</Text>
+            <Text style={{ fontSize: 18, color: theme === 'dark' ? '#F5F5F5' : '#1E1E1E', marginBottom: 8, textAlign: 'center' }}>Write to {"\n"} {displayContact.name}</Text>
+            <Text style={{ color: '#A0A0A0', fontSize: 14, textAlign: 'center' }}>Say what you need to say {"\n"} with no pressure and no consequences.</Text>
           </View>
         ) : (
           messages.map((msg) => (

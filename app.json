@@ -1,77 +1,67 @@
-{
-  "expo": {
-    "packagerOpts": {
-      "hostType": "lan",
-      "lanType": "ip"
-      
-    },
-    "devClient": {
-      "silentLaunch": false,
-      "developmentClient": true
-    },
-    "name": "Unspoken",
-    "slug": "unspoken-messages",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/logo_portocaliu.png",
-    "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/logo_portocaliu.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1E1E1E"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.unspokenmessages.app",
-      "infoPlist": {
-        "NSContactsUsageDescription": "Unspoken needs access to contacts to help you select people to write messages to.",
-        "NSFaceIDUsageDescription": "Allow Unspoken to use Face ID to protect your private messages.",
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/logo_portocaliu.png",
-        "backgroundColor": "#1E1E1E"
-      },
-      "package": "com.unspokenmessages.app",
-      "permissions": [
-        "android.permission.READ_CONTACTS",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.WRITE_CONTACTS",
-        "android.permission.RECORD_AUDIO"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/logo_portocaliu.png"
-    },
-    "plugins": [
-      "expo-contacts",
-      "expo-local-authentication",
-      "expo-image-picker",
-      "expo-secure-store",
-      [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "react-native",
-          "organization": "fofensoft-srl"
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "a55c4f69-e7b0-49f4-85f1-7e45bef496e1"
-      }
-    },
-    "owner": "pitac99",
-    "runtimeVersion": "1.0.0",
-    "updates": {
-      "url": "https://u.expo.dev/a55c4f69-e7b0-49f4-85f1-7e45bef496e1"
-    }
-  }
+﻿{
+    "expo":  {
+                 "name":  "Unspoken",
+                 "slug":  "unspoken-messages",
+                 "version":  "1.0.0",
+                 "orientation":  "portrait",
+                 "icon":  "./assets/logo_portocaliu.png",
+                 "userInterfaceStyle":  "dark",
+                 "splash":  {
+                                "image":  "./assets/logo_portocaliu.png",
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#1E1E1E"
+                            },
+                 "assetBundlePatterns":  [
+                                             "**/*"
+                                         ],
+                 "ios":  {
+                             "supportsTablet":  true,
+                             "bundleIdentifier":  "com.unspokenmessages.app",
+                             "buildNumber":  "8",
+                             "infoPlist":  {
+                                               "NSContactsUsageDescription":  "Unspoken needs access to contacts to help you select people to write messages to.",
+                                               "NSFaceIDUsageDescription":  "Allow Unspoken to use Face ID to protect your private messages.",
+                                               "ITSAppUsesNonExemptEncryption":  false
+                                           }
+                         },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "foregroundImage":  "./assets/logo_portocaliu.png",
+                                                      "backgroundColor":  "#1E1E1E"
+                                                  },
+                                 "package":  "com.unspokenmessages.app",
+                                 "permissions":  [
+                                                     "android.permission.READ_CONTACTS",
+                                                     "android.permission.USE_BIOMETRIC",
+                                                     "android.permission.USE_FINGERPRINT",
+                                                     "android.permission.WRITE_CONTACTS",
+                                                     "android.permission.RECORD_AUDIO"
+                                                 ]
+                             },
+                 "web":  {
+                             "favicon":  "./assets/logo_portocaliu.png"
+                         },
+                 "plugins":  [
+                                 "expo-contacts",
+                                 "expo-local-authentication",
+                                 "expo-image-picker",
+                                 "expo-secure-store",
+                                 [
+                                     "@sentry/react-native/expo",
+                                     {
+                                         "url":  "https://sentry.io/",
+                                         "project":  "react-native",
+                                         "organization":  "fofensoft-srl"
+                                     }
+                                 ]
+                             ],
+                 "extra":  {
+                               "eas":  {
+                                           "projectId":  "a55c4f69-e7b0-49f4-85f1-7e45bef496e1"
+                                       }
+                           },
+                 "owner":  "pitac99",
+                 "runtimeVersion":  "1.0.0"
+                 
+             }
 }
