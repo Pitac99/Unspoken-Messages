@@ -122,8 +122,8 @@ export default function PinAuthPage({ navigation }: Props) {
 
       {/* Heading and Subheading */}
       <View style={{ marginBottom: 24 }}>
-        <Text style={styles.heading}>Create your PIN</Text>
-        <Text style={styles.subheading}>Choose a 4-digit code to secure your app</Text>
+        <Text style={styles.heading}>Enter PIN</Text>
+        
       </View>
 
       {/* PIN Dots and Status */}

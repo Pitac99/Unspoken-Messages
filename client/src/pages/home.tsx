@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, TextInput, Platform, Pressable } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from "@/context/ThemeContext";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { logError } from '@/lib/sentry';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -342,7 +343,7 @@ export default function HomePage({ navigation }: Props) {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Conversations</Text>
+          <Text style={styles.title}>Unspoken</Text>
         </View>
         <TouchableOpacity
           onPress={handleSettingsClick}
@@ -364,16 +365,16 @@ export default function HomePage({ navigation }: Props) {
               <Ionicons name="add" size={32} color="#A0A0A0" />
             </View>
             <Text style={styles.emptyStateTitle}>
-              No conversations yet
+            No messages yet
             </Text>
             <Text style={styles.emptyStateDescription}>
-              Start your therapeutic journey by creating your first conversation.
+            Start by writing the message you've been holding in.
             </Text>
             <TouchableOpacity
               onPress={handleNewConversation}
               style={styles.newConversationButton}
             >
-              <Text style={styles.newConversationButtonText}>Start New Conversation</Text>
+              <Text style={styles.newConversationButtonText}>Begin your expressive writing</Text>
             </TouchableOpacity>
           </View>
         ) : (

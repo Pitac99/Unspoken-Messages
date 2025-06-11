@@ -7,6 +7,7 @@ export type RootStackParamList = {
   ContactSelection: undefined;
   Chat: { contactId: string };
   Settings: undefined;
-  Terms: undefined;
+  Terms: { fromSettings: boolean };
+  About: undefined;
   aboutunspoken: undefined;
 }; 

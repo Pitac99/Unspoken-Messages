@@ -11,7 +11,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Keyboard
+  Keyboard,
+  Animated,
+  Easing,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
@@ -215,6 +217,7 @@ export default function ChatPage({ navigation, route }: Props) {
   const [donationModalOpen, setDonationModalOpen] = useState(false);
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const bottomOffset = useRef(new Animated.Value(0)).current;
 
   const { data, addMessage, editMessage, getContactMessages, updateData, shouldShowDonationModal, markDonationPromptShown, reloadData, deleteMessage } = useAppData();
   const { toast } = useToast();
@@ -237,6 +240,30 @@ export default function ChatPage({ navigation, route }: Props) {
     }, [reloadData])
   );
 
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', (event) => {
+      Animated.timing(bottomOffset, {
+        toValue: event.endCoordinates.height,
+        duration: 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }).start();
+    });
+  
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      Animated.timing(bottomOffset, {
+        toValue: 0,
+        duration: 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }).start();
+    });
+  
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
   const contact = data?.contacts.find(c => c.id === contactId);
   const conversation = data?.conversations.find(c => c.contactId === contactId);
   const messages = getContactMessages(contactId || "");
@@ -575,15 +602,169 @@ export default function ChatPage({ navigation, route }: Props) {
     }
   };
 
-  return (
+  return Platform.OS === 'ios' ?(
     <KeyboardAvoidingView
-      style={[
-        styles.container,
-        Platform.OS === 'android' && { paddingBottom: 25 }
-      ]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
+    style={styles.container}
+    behavior="padding"
+    keyboardVerticalOffset={0}
+  >
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#F5F5F5" />
+        </TouchableOpacity>
+        {/* Avatar */}
+        <TouchableOpacity onPress={handleUploadImage} activeOpacity={0.7}>
+          {displayContact.imageUrl ? (
+            <Image
+              source={{ uri: displayContact.imageUrl }}
+              style={styles.headerAvatar}
+            />
+          ) : (
+            <View style={[styles.headerAvatar, { backgroundColor: getAvatarBgColor(displayContact.color) }]}> 
+              <Text style={styles.headerAvatarText}>{displayContact.avatar}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        {/* Name and subtitle */}
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.contactName}>{displayContact.name}</Text>
+          <Text style={styles.headerSubtitle}>Expressive writing</Text>
+        </View>
+        {/* Three dots button */}
+        <TouchableOpacity style={styles.headerMoreButton} onPress={openOptionsModal}>
+          <Ionicons name="ellipsis-vertical" size={22} color="#A0A0A0" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView ref={scrollViewRef} style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+        {isClosed ? (
+          <View style={{ alignItems: 'center', marginTop: 20 }}>
+            {messages.map((msg) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onEdit={handleEditMessage}
+                isEditMode={!isClosed}
+                isEditing={editingMessageId === msg.id}
+                onDelete={!isClosed ? handleDeleteMessage : undefined}
+              />
+            ))}
+            <View style={{ backgroundColor: '#2D2D2D', padding: 20, borderRadius: 20, alignItems: 'center', marginTop: 20 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#22C55E', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ color: '#fff', fontSize: 24 }}>✓</Text>
+              </View>
+              <Text style={{ color: '#F5F5F5', fontSize: 18, marginBottom: 4 }}>We are glad you found closure</Text>
+              <Text style={{ color: '#A0A0A0', fontSize: 14 }}>This therapeutic conversation has reached its closure.</Text>
+            </View>
+            {/* Unlock button */}
+            <TouchableOpacity style={styles.unlockButton} onPress={handleUnlock}>
+              <Ionicons name="lock-open" size={20} color="#1E1E1E" style={{ marginRight: 8 }} />
+              <Text style={styles.unlockButtonText}>Unlock</Text>
+            </TouchableOpacity>
+          </View>
+        ) : messages.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#D49A6A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ color: '#1E1E1E', fontSize: 24 }}>{displayContact.avatar}</Text>
+            </View>
+            <Text style={{ fontSize: 18, color: theme === 'dark' ? '#F5F5F5' : '#1E1E1E', marginBottom: 8, textAlign: 'center' }}>Start your conversation with {"\n"} {displayContact.name}</Text>
+            <Text style={{ color: '#A0A0A0', fontSize: 14, textAlign: 'center' }}>This is a safe space to express your thoughts and feelings.</Text>
+          </View>
+        ) : (
+          messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              onEdit={handleEditMessage}
+              isEditMode={!isClosed}
+              isEditing={editingMessageId === msg.id}
+              onDelete={!isClosed ? handleDeleteMessage : undefined}
+            />
+          ))
+        )}
+      </ScrollView>
+
+      {!isClosed && (
+        <>
+          <View style={{ height: 1, backgroundColor: theme === 'dark' ? '#383838' : '#E0E0E0', width: '100%' }} />
+          <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Type your message..."
+              placeholderTextColor="#A0A0A0"
+              multiline
+              maxLength={2000}
+              returnKeyType={editingMessageId ? 'done' : 'default'}
+              onSubmitEditing={editingMessageId ? handleSaveEdit : undefined}
+            />
+            {editingMessageId ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%' }}>
+                <TouchableOpacity
+                  style={[styles.sendButton, (!message.trim() || isLoading) && styles.sendButtonDisabled, { width: 40, height: 40, borderRadius: 20 }]}
+                  onPress={handleSaveEdit}
+                  disabled={!message.trim() || isLoading}
+                >
+                  <Ionicons name="checkmark" size={18} color="#1E1E1E" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sendButton, { backgroundColor: '#A0A0A0', marginLeft: 6, width: 40, height: 40, borderRadius: 20 }]}
+                  onPress={handleCancelEdit}
+                >
+                  <Ionicons name="close" size={18} color="#1E1E1E" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sendButton, { backgroundColor: '#EF4444', marginLeft: 6, width: 40, height: 40, borderRadius: 20 }]}
+                  onPress={() => handleDeleteMessage(editingMessageId)}
+                >
+                  <Ionicons name="trash" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.sendButton, (!message.trim() || isLoading) && styles.sendButtonDisabled]}
+                onPress={handleSendMessage}
+                disabled={!message.trim() || isLoading}
+              >
+                {isLoading ? <ActivityIndicator color="#1E1E1E" size="small" /> : <Ionicons name="send" size={20} color="#1E1E1E" />}
+              </TouchableOpacity>
+            )}
+          </View>
+          
+        </>
+      )}
+
+      {unlockDialogOpen && (
+        <View style={styles.unlockDialog}>
+          <Text style={styles.unlockTitle}>Enter PIN to Unlock</Text>
+          <PinDots length={4} filled={unlockPin.length} />
+          <View style={{ height: 24 }} />
+          <Keypad onNumberPress={(n) => {
+            if (unlockPin.length < 4) setUnlockPin(prev => prev + n);
+          }} onDelete={() => setUnlockPin(prev => prev.slice(0, -1))} />
+        </View>
+      )}
+
+      {donationModalOpen && (
+        <DonationModal
+          isOpen={donationModalOpen}
+          onClose={() => {
+            setDonationModalOpen(false);
+            markDonationPromptShown();
+          }}
+          messageCount={data?.settings.totalMessagesSent || 0}
+        />
+      )}
+
+      {/* Rename Modal */}
+      {renderRenameModal()}
+      {/* Options Modal */}
+      {renderOptionsModal()}
+    </KeyboardAvoidingView>
+  ) : (
+    <Animated.View style={[styles.container, { paddingBottom: bottomOffset }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#F5F5F5" />
@@ -738,6 +919,6 @@ export default function ChatPage({ navigation, route }: Props) {
       {renderRenameModal()}
       {/* Options Modal */}
       {renderOptionsModal()}
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 }

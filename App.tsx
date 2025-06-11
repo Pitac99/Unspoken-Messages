@@ -14,7 +14,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as SystemUI from 'expo-system-ui';
 import { ThemeProvider, useTheme } from './client/src/context/ThemeContext';
+import * as Sentry from '@sentry/react-native';
+import { initSentry } from './client/src/lib/sentry';
 
+// Initialize Sentry as early as possible
+initSentry();
 
 // Pagini
 import IntroPage from './client/src/pages/intro';
@@ -87,7 +91,7 @@ function AppWithTheme() {
   );
 }
 
-export default function App() {
+function App() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
@@ -169,8 +173,17 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <AppWithTheme />
-    </ThemeProvider>
+    <Sentry.ErrorBoundary fallback={(errorData) => (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>An error has occurred</Text>
+        <Text>{errorData.error?.toString()}</Text>
+      </View>
+    )}>
+      <ThemeProvider>
+        <AppWithTheme />
+      </ThemeProvider>
+    </Sentry.ErrorBoundary>
   );
 }
+
+export default App;

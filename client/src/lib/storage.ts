@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { encrypt, decrypt } from "./encryption";
 import type { AppData } from '../types';
 
 export const STORAGE_KEYS = {
   APP_DATA: 'app_data',
+  APP_DATA_BACKUP: 'app_data_backup',
   AUTH_SESSION: 'auth_session',
   PIN_HASH: 'pin_hash',
   ONBOARDING_COMPLETE: 'onboarding_complete',
@@ -11,27 +13,40 @@ export const STORAGE_KEYS = {
 } as const;
 
 // Helper to revive date strings to Date objects in AppData
-function reviveAppDataDates(appData: any): AppData {
-  // Convert contacts
-  appData.contacts = appData.contacts.map((contact: any) => ({
-    ...contact,
-    createdAt: new Date(contact.createdAt),
-  }));
-  // Convert messages
-  appData.messages = appData.messages.map((message: any) => ({
-    ...message,
-    timestamp: new Date(message.timestamp),
-  }));
-  // Convert conversations
-  appData.conversations = appData.conversations.map((conversation: any) => ({
-    ...conversation,
-    lastMessageAt: conversation.lastMessageAt ? new Date(conversation.lastMessageAt) : undefined,
-  }));
-  return appData;
+function reviveAppDataDates(appData: any): AppData | null {
+  if (!appData) return null;
+  try {
+    // Convert contacts
+    if (Array.isArray(appData.contacts)) {
+      appData.contacts = appData.contacts.map((contact: any) => ({
+        ...contact,
+        createdAt: new Date(contact.createdAt),
+      }));
+    }
+    // Convert messages
+    if (Array.isArray(appData.messages)) {
+      appData.messages = appData.messages.map((message: any) => ({
+        ...message,
+        timestamp: new Date(message.timestamp),
+      }));
+    }
+    // Convert conversations
+    if (Array.isArray(appData.conversations)) {
+      appData.conversations = appData.conversations.map((conversation: any) => ({
+        ...conversation,
+        lastMessageAt: conversation.lastMessageAt ? new Date(conversation.lastMessageAt) : undefined,
+      }));
+    }
+    return appData as AppData;
+  } catch (error) {
+    console.error("Error reviving dates:", error);
+    return null;
+  }
 }
 
 class StorageManager {
   private static instance: StorageManager;
+  private constructor() {}
 
   static getInstance(): StorageManager {
     if (!StorageManager.instance) {
@@ -42,12 +57,13 @@ class StorageManager {
 
   async getItem(key: string): Promise<string | null> {
     try {
+      // Încearcă să citească din AsyncStorage
       const encryptedData = await AsyncStorage.getItem(key);
       if (!encryptedData) return null;
       
       const decryptedData = await decrypt(encryptedData);
       
-      // Validate that the decrypted data is valid JSON if it starts with { or [
+      // Validează că datele decriptate sunt JSON valid
       if (decryptedData.startsWith('{') || decryptedData.startsWith('[')) {
         try {
           JSON.parse(decryptedData);
@@ -66,7 +82,7 @@ class StorageManager {
 
   async setItem(key: string, value: string): Promise<void> {
     try {
-      // Validate JSON if the value starts with { or [
+      // Validează JSON dacă valoarea începe cu { sau [
       if (value.startsWith('{') || value.startsWith('[')) {
         try {
           JSON.parse(value);
@@ -77,6 +93,11 @@ class StorageManager {
       
       const encryptedData = await encrypt(value);
       await AsyncStorage.setItem(key, encryptedData);
+
+      // Dacă este APP_DATA, salvează și un backup
+      if (key === STORAGE_KEYS.APP_DATA) {
+        await AsyncStorage.setItem(STORAGE_KEYS.APP_DATA_BACKUP, encryptedData);
+      }
     } catch (error) {
       console.error(`Failed to set encrypted data for key ${key}:`, error);
       throw error;
@@ -94,22 +115,52 @@ class StorageManager {
 
   async getAppData(): Promise<AppData | null> {
     try {
+      // Încearcă să citească datele principale
       const data = await this.getItem(STORAGE_KEYS.APP_DATA);
-      if (!data) return null;
+      if (data) {
+        const parsedData = reviveAppDataDates(JSON.parse(data));
+        if (parsedData) return parsedData;
+      }
 
-      return reviveAppDataDates(JSON.parse(data));
+      // Dacă datele principale nu există sau sunt corupte, încearcă backup-ul
+      console.log("Main data not found or corrupted, trying backup...");
+      const backupData = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA_BACKUP);
+      if (backupData) {
+        try {
+          const decryptedBackup = await decrypt(backupData);
+          const parsedBackup = reviveAppDataDates(JSON.parse(decryptedBackup));
+          if (parsedBackup) {
+            // Restaurează backup-ul în storage-ul principal
+            await this.setAppData(parsedBackup);
+            return parsedBackup;
+          }
+        } catch (error) {
+          console.error("Failed to restore from backup:", error);
+        }
+      }
+
+      // Dacă nici backup-ul nu funcționează, returnează null
+      console.warn("⚠️ No valid data found. Starting fresh.");
+      return null;
     } catch (error) {
-      console.warn("⚠️ Corrupted app data detected. Resetting app_data.");
-      await this.removeItem(STORAGE_KEYS.APP_DATA); // sterge datele corupte
-      return null; // intoarce null si aplica fallback in App.tsx
+      console.error("Error in getAppData:", error);
+      return null;
     }
   }
 
   async setAppData(data: AppData): Promise<void> {
     try {
-      await this.setItem(STORAGE_KEYS.APP_DATA, JSON.stringify(data));
+      const jsonData = JSON.stringify(data);
+      await this.setItem(STORAGE_KEYS.APP_DATA, jsonData);
+      
+      // Salvează și în SecureStore ca backup adițional
+      try {
+        await SecureStore.setItemAsync(STORAGE_KEYS.APP_DATA, jsonData);
+      } catch (secureError) {
+        console.warn("Failed to save backup to SecureStore:", secureError);
+      }
     } catch (error) {
-      // console.error("Error setting app data:", error);
+      console.error("Error setting app data:", error);
       throw error;
     }
   }

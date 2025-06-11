@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,26 +48,47 @@ export default function ContactSelectionPage({ navigation }: Props) {
 
   const handleAccessPhoneContacts = async () => {
     try {
-      const { status } = await Contacts.requestPermissionsAsync();
-      if (status === 'granted') {
-        const { data } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.Name],
-        });
+      const { status, canAskAgain } = await Contacts.getPermissionsAsync();
 
-        if (data.length > 0) {
-          setPhoneContacts(data);
-          setShowPhoneContacts(true);
-        } else {
+      // Daca nu avem permisiune, o cerem din nou
+      if (status !== 'granted' && canAskAgain) {
+        const { status: newStatus } = await Contacts.requestPermissionsAsync();
+        if (newStatus !== 'granted') {
           toast({
-            title: "No Contacts",
-            description: "No contacts found on your device.",
+            title: "Permission Denied",
+            description: "Cannot access phone contacts. Please create contacts manually.",
             variant: "destructive",
           });
+          return;
         }
+      }
+
+      // Daca permisiunea a fost deja data, dar doar partial, cerem utilizatorului sa mearga in settings
+      if (status !== 'granted' && !canAskAgain) {
+        toast({
+          title: "Limited Access",
+          description: "To update contact access, please allow full access in settings.",
+          action: {
+            label: "Open Settings",
+            onPress: () => Linking.openSettings()
+          },
+          variant: "default"
+        });
+        return;
+      }
+
+      // Daca totul e OK, incarcam contactele
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.Name],
+      });
+
+      if (data.length > 0) {
+        setPhoneContacts(data);
+        setShowPhoneContacts(true);
       } else {
         toast({
-          title: "Permission Denied",
-          description: "Cannot access phone contacts. Please create contacts manually.",
+          title: "No Contacts",
+          description: "No contacts found on your device.",
           variant: "destructive",
         });
       }
@@ -112,7 +133,7 @@ export default function ContactSelectionPage({ navigation }: Props) {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#F5F5F5" />
         </TouchableOpacity>
-        <Text style={styles.title}>New Conversation</Text>
+        <Text style={styles.title}>Unspoken message to...</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -163,7 +184,7 @@ export default function ContactSelectionPage({ navigation }: Props) {
               onPress={handleCreateContact}
               style={styles.createContactButton}
             >
-              <Text style={styles.createContactButtonText}>Create & Start Conversation</Text>
+              <Text style={styles.createContactButtonText}>Begin your expressive writing</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -191,6 +212,9 @@ export default function ContactSelectionPage({ navigation }: Props) {
               autoFocus
               returnKeyType="search"
             />
+            <Text style={styles.reassuranceText}>
+  Don’t worry — selecting a contact does not send anything or create a real connection. Only the name is copied locally.
+</Text>
             <ScrollView style={styles.contactsList}>
               {filteredContacts.length === 0 ? (
                 <Text style={styles.emptyText}>No contacts found or access denied</Text>
@@ -378,6 +402,13 @@ function getStyles(theme: "light" | "dark") {
       fontSize: 18,
       fontWeight: '500',
       color: '#F5F5F5',
+    },
+    reassuranceText: {
+      fontSize: 13,
+      color: theme === "dark" ? '#A0A0A0' : '#555',
+      marginBottom: 12,
+      textAlign: 'center',
+      fontStyle: 'italic',
     },
     contactName: { fontSize: 16, color: theme === "dark" ? '#F5F5F5' : '#232323', marginLeft: 10,},
   });

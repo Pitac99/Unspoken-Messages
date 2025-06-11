@@ -1,8 +1,9 @@
 const { getDefaultConfig } = require('@expo/metro-config');
 const path = require('path');
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname, {
+const config = getSentryExpoConfig(__dirname, {
   // Enable CSS support
   isCSSEnabled: true,
 });
@@ -42,4 +43,16 @@ config.maxWorkers = 4;
 config.resetCache = false;
 config.cacheVersion = '1.0';
 
-module.exports = config; 
+// Server configuration
+config.server = {
+  port: 8081,
+  enhanceMiddleware: (middleware) => {
+    return (req, res, next) => {
+      // Allow connections from all origins
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      return middleware(req, res, next);
+    };
+  }
+};
+
+module.exports = config;

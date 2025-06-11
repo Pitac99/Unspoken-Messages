@@ -17,18 +17,18 @@ export default function OnboardingPage({ navigation }: Props) {
 
   const steps = [
     {
-      title: "Private & Secure",
-      description: "Your messages are encrypted locally and never leave your device. Complete privacy guaranteed.",
+      title: "Private & Safe",
+      description: "Your messages stay on your device, fully encrypted. No cloud, no accounts — just your words, safe with you.",
       delay: "0s"
     },
     {
-      title: "Therapeutic Writing",
-      description: "Write messages to symbolic contacts - express emotions without expecting responses.",
+      title: "Write It Anyway",
+      description: "Angry at your boss? Missing someone who’s gone? Here, you can “send” those messages without actually sending them — and finally let them out.",
       delay: "0.1s"
     },
     {
-      title: "Emotional Processing",
-      description: "Track your mental health journey through organized conversations and insights.",
+      title: "Let It Out, Then Let It Go",
+      description: "Each message becomes a step forward — not shared, but truly felt. A quiet moment of honesty, just for your own peace.",
       delay: "0.2s"
     }
   ];
@@ -44,8 +44,8 @@ export default function OnboardingPage({ navigation }: Props) {
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.title}>Welcome to Your Safe Space</Text>
-        <Text style={styles.subtitle}>Let's set up your therapeutic journey</Text>
+        <Text style={styles.title}>Welcome to Unspoken</Text>
+        <Text style={styles.subtitle}>Let’s show you how it works — this space is just for you</Text>
       </View>
 
       {/* Onboarding Steps */}

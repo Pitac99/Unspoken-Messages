@@ -1,25 +1,57 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, TextInput, Platform } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppData } from '@/hooks/use-storage';
 import { auth } from '@/lib/auth';
 import { useTheme } from "@/context/ThemeContext";
+import { useToast } from '@/hooks/use-toast';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Terms'>;
 
-export default function TermsPage({ navigation }: Props) {
+export default function TermsPage({ navigation, route }: Props) {
   const { updateSettings } = useAppData();
   const { theme } = useTheme();
+  const { toast } = useToast();
   const styles = getStyles(theme);
+  const { fromSettings } = route.params;
+  
+  // Add PIN modal state
+  const [pinModalVisible, setPinModalVisible] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const handleBack = () => {
     navigation.goBack();
   };
+
   const handleWithdrawConsent = () => {
-    updateSettings({ onboardingCompleted: false });
-    auth.logout();
-    navigation.replace('Intro');
+    setPinInput("");
+    setPinError("");
+    setPinModalVisible(true);
+  };
+
+  const handlePinSubmit = async () => {
+    setIsProcessing(true);
+    setPinError("");
+    
+    try {
+      const isValid = await auth.authenticate(pinInput);
+      if (isValid) {
+        setPinModalVisible(false);
+        updateSettings({ onboardingCompleted: false });
+        auth.logout();
+        navigation.replace('Intro');
+      } else {
+        setPinError("Incorrect PIN. Please try again.");
+      }
+    } catch (error) {
+      setPinError("An error occurred. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -149,12 +181,59 @@ export default function TermsPage({ navigation }: Props) {
         </Text>
       </View>
 
-          <TouchableOpacity style={styles.withdrawButton} onPress={handleWithdrawConsent}>
-            <Ionicons name="alert-circle-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.withdrawButtonText}>Withdraw Consent</Text>
-          </TouchableOpacity>
+          {fromSettings && (
+            <TouchableOpacity style={styles.withdrawButton} onPress={handleWithdrawConsent}>
+              <Ionicons name="alert-circle-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.withdrawButtonText}>Withdraw Consent</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
+
+      {/* PIN Modal */}
+      {pinModalVisible && (
+        <View style={styles.modal}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', maxWidth: 400 }}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Enter PIN to Withdraw Consent</Text>
+              <TextInput
+                style={styles.input}
+                value={pinInput}
+                onChangeText={setPinInput}
+                maxLength={4}
+                keyboardType="numeric"
+                secureTextEntry
+                placeholder="Enter your 4-digit PIN"
+                placeholderTextColor="#A0A0A0"
+                editable={!isProcessing}
+              />
+              {pinError ? <Text style={styles.errorText}>{pinError}</Text> : null}
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => {
+                    setPinModalVisible(false);
+                    setPinInput("");
+                    setPinError("");
+                  }} 
+                  disabled={isProcessing}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.confirmButton, (!pinInput || isProcessing) && styles.confirmButtonDisabled]} 
+                  onPress={handlePinSubmit} 
+                  disabled={!pinInput || isProcessing}
+                >
+                  <Text style={styles.confirmButtonText}>
+                    {isProcessing ? 'Verifying...' : 'Confirm'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      )}
     </View>
   );
 }
@@ -248,6 +327,78 @@ function getStyles(theme: "light" | "dark") {
       color: '#1E1E1E',
       fontSize: 16,
       fontWeight: '600',
+    },
+    modal: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    modalContent: {
+      backgroundColor: theme === "dark" ? '#2D2D2D' : '#FFFFFF',
+      borderRadius: 16,
+      padding: 24,
+      width: '100%',
+      maxWidth: 400,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    input: {
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#F5F5F5',
+      borderRadius: 8,
+      padding: 12,
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    errorText: {
+      color: '#D49A6A',
+      fontSize: 14,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    cancelButton: {
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: theme === "dark" ? '#1E1E1E' : '#E0E0E0',
+      alignItems: 'center',
+    },
+    cancelButtonText: {
+      color: theme === "dark" ? '#F5F5F5' : '#232323',
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    confirmButton: {
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: '#D49A6A',
+      alignItems: 'center',
+    },
+    confirmButtonDisabled: {
+      opacity: 0.5,
+    },
+    confirmButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '500',
     },
   });
 }

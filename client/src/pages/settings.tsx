@@ -287,7 +287,7 @@ export default function SettingsPage({ navigation }: Props) {
   };
 
   const handleTerms = () => {
-    navigation.navigate('Terms');
+    navigation.navigate('Terms', { fromSettings: true });
   };
 
   const handleResetPin = async () => {

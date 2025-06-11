@@ -28,7 +28,7 @@ export default function IntroPage({ navigation }: Props) {
   };
 
   const handleViewTerms = () => {
-    navigation.navigate('Terms');
+    navigation.navigate('Terms', { fromSettings: false });
   };
 
   return (
@@ -46,14 +46,14 @@ export default function IntroPage({ navigation }: Props) {
           </View>
           <Text style={styles.title}>UNSPOKEN</Text>
           <Text style={styles.subtitle}>
-            A therapeutic space for your thoughts
+          A place to “send” what can’t be sent
           </Text>
         </View>
 
         {/* Welcome Message */}
         <View style={styles.messageContainer}>
           <Text style={styles.message}>
-            Express your deepest thoughts in a secure, private environment designed for emotional healing.
+          When you need to vent, grieve, or say the unsayable — Unspoken is where those messages go. Write them, feel them, release them.
           </Text>
         </View>
 
