@@ -37,7 +37,6 @@ function reviveAppDataDates(appData: any): AppData | null {
     }
     return appData as AppData;
   } catch (error) {
-    console.error("Error reviving dates:", error);
     return null;
   }
 }
@@ -61,20 +60,17 @@ class StorageManager {
         try {
           JSON.parse(decryptedData);
         } catch (error: any) {
-          console.error(`Invalid JSON data for key ${key}:`, error);
           return null;
         }
       }
       return decryptedData;
     } catch (error) {
-      console.error(`Failed to get encrypted data for key ${key}:`, error);
       return null;
     }
   }
 
   async setItem(key: string, value: string): Promise<void> {
     if (key === STORAGE_KEYS.AUTH_SESSION) {
-      console.log('[DEBUG] setItem: setez AUTH_SESSION', value);
     }
     try {
       if (value.startsWith('{') || value.startsWith('[')) {
@@ -86,28 +82,23 @@ class StorageManager {
         await AsyncStorage.setItem(STORAGE_KEYS.APP_DATA_BACKUP, encryptedData);
       }
     } catch (error) {
-      console.error(`Failed to set encrypted data for key ${key}:`, error);
       throw error;
     }
   }
 
   async removeItem(key: string): Promise<void> {
     if (key === STORAGE_KEYS.AUTH_SESSION) {
-      console.log('[DEBUG] removeItem: șterg AUTH_SESSION');
     }
     await AsyncStorage.removeItem(key);
   }
 
   async getAppData(): Promise<AppData | null> {
     try {
-      console.log('[DEBUG] getAppData: încerc să citesc datele principale');
       const data = await this.getItem(STORAGE_KEYS.APP_DATA);
       if (data) {
-        console.log('[DEBUG] getAppData: date principale găsite', data);
         const parsedData = reviveAppDataDates(JSON.parse(data));
         if (parsedData) return parsedData;
       }
-      console.log('[DEBUG] getAppData: Main data not found or corrupted, trying backup...');
       const backupData = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA_BACKUP);
       if (backupData) {
         const decryptedBackup = await decrypt(backupData);
@@ -117,10 +108,8 @@ class StorageManager {
           return parsedBackup;
         }
       }
-      console.warn('[DEBUG] getAppData: ⚠️ No valid data found. Starting fresh.');
       return null;
     } catch (error) {
-      console.error('[DEBUG] getAppData: Error in getAppData:', error);
       return null;
     }
   }
@@ -128,15 +117,12 @@ class StorageManager {
   async setAppData(data: AppData): Promise<void> {
     try {
       const jsonData = JSON.stringify(data);
-      console.log('[DEBUG] setAppData: salvez datele', jsonData);
       await this.setItem(STORAGE_KEYS.APP_DATA, jsonData);
       try {
         await SecureStore.setItemAsync(STORAGE_KEYS.APP_DATA, jsonData);
       } catch (secureError) {
-        console.warn('[DEBUG] setAppData: Failed to save backup to SecureStore:', secureError);
       }
     } catch (error) {
-      console.error('[DEBUG] setAppData: Error setting app data:', error);
       throw error;
     }
   }
@@ -183,13 +169,11 @@ class StorageManager {
 
   async areTermsAccepted(): Promise<boolean> {
     const value = await this.getItem(STORAGE_KEYS.TERMS_ACCEPTED);
-    console.log('[DEBUG] areTermsAccepted: valoare citită', value);
     return value === 'true';
   }
 
   async setTermsAccepted(value: boolean = true): Promise<void> {
     const storedValue = value ? 'true' : 'false';
-    console.log(`[DEBUG] setTermsAccepted: setez TERMS_ACCEPTED la ${storedValue}`);
     await this.setItem(STORAGE_KEYS.TERMS_ACCEPTED, storedValue);
   }
 

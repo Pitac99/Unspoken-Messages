@@ -7,6 +7,11 @@ import { useAppData } from '@/hooks/use-storage';
 import { useToast } from '@/hooks/use-toast';
 import * as Contacts from 'expo-contacts';
 import { useTheme } from "@/context/ThemeContext";
+import ProgressBarAndroid from '@react-native-community/progress-bar-android';
+import Clipboard from '@react-native-clipboard/clipboard';
+import PushNotificationIOS from '@react-native-community/push-notification-ios';
+
+
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ContactSelection'>;
 
@@ -49,7 +54,7 @@ export default function ContactSelectionPage({ navigation }: Props) {
   const handleAccessPhoneContacts = async () => {
     try {
       const { status, canAskAgain } = await Contacts.getPermissionsAsync();
-
+  
       // Daca nu avem permisiune, o cerem din nou
       if (status !== 'granted' && canAskAgain) {
         const { status: newStatus } = await Contacts.requestPermissionsAsync();
@@ -62,26 +67,14 @@ export default function ContactSelectionPage({ navigation }: Props) {
           return;
         }
       }
-
+  
       // Daca permisiunea a fost deja data, dar doar partial, cerem utilizatorului sa mearga in settings
-      if (status !== 'granted' && !canAskAgain) {
-        toast({
-          title: "Limited Access",
-          description: "To update contact access, please allow full access in settings.",
-          action: {
-            label: "Open Settings",
-            onPress: () => Linking.openSettings()
-          },
-          variant: "default"
-        });
-        return;
-      }
-
+      
       // Daca totul e OK, incarcam contactele
       const { data } = await Contacts.getContactsAsync({
         fields: [Contacts.Fields.Name],
       });
-
+  
       if (data.length > 0) {
         setPhoneContacts(data);
         setShowPhoneContacts(true);
@@ -237,6 +230,10 @@ export default function ContactSelectionPage({ navigation }: Props) {
                 ))
               )}
             </ScrollView>
+            <View style={{ paddingTop: 20, alignItems: 'center' }}>
+    <Text style={{ color: '#A0A0A0', textAlign: 'center', marginBottom: 8 }}>
+    Manage Contacts permissions from Phone Settings
+  </Text></View>
           </View>
         )}
       </View>
